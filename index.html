@@ -3,85 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>RYDR</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; overflow: hidden; }
-
-    .left { width:48%; background:linear-gradient(145deg,#2dba5f 0%,#1a9e4a 45%,#157a38 100%); padding:40px 44px 32px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; color:#fff; }
-    .left::before { content:''; position:absolute; width:500px; height:500px; border-radius:50%; background:rgba(255,255,255,0.08); top:-160px; right:-160px; pointer-events:none; }
-    .left::after  { content:''; position:absolute; width:340px; height:340px; border-radius:50%; background:rgba(255,255,255,0.07); bottom:40px; left:-100px; pointer-events:none; }
-    .logo { display:flex; align-items:center; gap:12px; font-size:1.65rem; font-weight:800; position:relative; z-index:1; }
-    .logo-icon { width:46px; height:46px; background:rgba(255,255,255,0.22); border-radius:12px; display:grid; place-items:center; font-size:1.3rem; }
-    .hero { position:relative; z-index:1; }
-    .hero h1 { font-size:clamp(1.75rem,2.9vw,2.7rem); font-weight:900; line-height:1.1; margin-bottom:16px; }
-    .hero p { font-size:0.95rem; line-height:1.65; opacity:0.9; max-width:360px; }
-    .stats { display:flex; gap:10px; position:relative; z-index:1; }
-    .stat-card { flex:1; background:rgba(255,255,255,0.14); border-radius:14px; padding:15px 13px; }
-    .stat-card .num { font-size:1.35rem; font-weight:800; display:block; }
-    .stat-card .lbl { font-size:0.73rem; opacity:0.85; margin-top:3px; display:block; }
-    .carousel-wrap { position:relative; z-index:1; }
-    .carousel-box  { position:relative; min-height:138px; }
-    .review-slide  { background:rgba(255,255,255,0.14); border-radius:18px; padding:18px 20px; position:absolute; inset:0; opacity:0; transform:translateY(12px) scale(0.98); transition:opacity 0.6s ease,transform 0.6s ease; pointer-events:none; }
-    .review-slide.active { opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
-    .stars { color:#fbbf24; font-size:0.95rem; letter-spacing:2px; margin-bottom:8px; }
-    .review-text { font-size:0.88rem; line-height:1.55; opacity:0.95; margin-bottom:13px; }
-    .reviewer { display:flex; align-items:center; gap:10px; }
-    .avatar { width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; }
-    .rev-name { font-weight:700; font-size:0.88rem; }
-    .rev-role { font-size:0.74rem; opacity:0.8; }
-    .dots { display:flex; gap:5px; justify-content:center; margin-top:9px; }
-    .dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.35); cursor:pointer; transition:background 0.3s,transform 0.3s; }
-    .dot.active { background:#fff; transform:scale(1.5); }
-
-    .right { flex:1; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 52px; position:relative; overflow:hidden; }
-    .panel { width:100%; max-width:420px; position:absolute; transition:opacity 0.4s ease,transform 0.4s ease; }
-    .panel.hidden  { opacity:0; pointer-events:none; transform:translateX(40px); }
-    .panel.visible { opacity:1; pointer-events:auto; transform:translateX(0); }
-
-    /* Panel 1 */
-    #panel-select { display:flex; flex-direction:column; align-items:center; }
-    #panel-select h2 { font-size:2rem; font-weight:900; color:#111; margin-bottom:8px; }
-    .subtitle { color:#6b7280; font-size:0.95rem; margin-bottom:38px; }
-    .roles { width:100%; display:flex; flex-direction:column; gap:13px; }
-    .role-card { display:flex; align-items:center; gap:18px; border:2px solid #e5e7eb; border-radius:16px; padding:17px 20px; cursor:pointer; transition:border-color 0.2s,box-shadow 0.2s; user-select:none; }
-    .role-card:hover { border-color:#d1d5db; box-shadow:0 4px 16px rgba(0,0,0,0.06); }
-    .role-card.selected { border-color:#22c55e; box-shadow:0 0 0 4px rgba(34,197,94,0.15); }
-    .role-icon { width:52px; height:52px; border-radius:14px; display:grid; place-items:center; font-size:1.35rem; flex-shrink:0; }
-    .ic-p { background:#3b82f6; } .ic-d { background:#22c55e; } .ic-a { background:#a855f7; }
-    .role-info { flex:1; }
-    .role-title { font-weight:700; font-size:1rem; color:#111; }
-    .role-desc  { font-size:0.82rem; color:#6b7280; margin-top:2px; }
-    .arrow { color:#9ca3af; font-size:1.3rem; transition:color 0.2s,transform 0.2s; }
-    .role-card.selected .arrow { color:#22c55e; transform:translateX(3px); }
-    .signup { margin-top:28px; font-size:0.9rem; color:#6b7280; text-align:center; }
-    .signup a { color:#22c55e; font-weight:600; text-decoration:none; }
-
-    /* Panel 2 */
-    #panel-login { display:flex; flex-direction:column; }
-    .back-btn { display:inline-flex; align-items:center; gap:6px; background:none; border:none; cursor:pointer; color:#6b7280; font-size:0.92rem; font-weight:500; padding:0; margin-bottom:30px; font-family:inherit; transition:color 0.2s; }
-    .back-btn:hover { color:#111; }
-    .login-title { font-size:2rem; font-weight:900; color:#111; margin-bottom:6px; text-align:center; }
-    .login-sub   { color:#6b7280; font-size:0.95rem; margin-bottom:32px; text-align:center; }
-    .field-label { font-size:0.88rem; font-weight:600; color:#111; margin-bottom:8px; display:block; }
-    .field-wrap  { position:relative; margin-bottom:20px; }
-    .field-icon  { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9ca3af; display:flex; pointer-events:none; }
-    .field-icon svg { width:18px; height:18px; }
-    input[type="email"], input[type="password"], input[type="text"] { width:100%; padding:13px 14px 13px 44px; border:1.5px solid #e5e7eb; border-radius:12px; font-size:0.95rem; color:#111; outline:none; transition:border-color 0.2s,box-shadow 0.2s; font-family:inherit; background:#fff; }
-    input::placeholder { color:#9ca3af; }
-    input:focus { border-color:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,0.12); }
-    .eye-btn { position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#9ca3af; display:flex; padding:0; }
-    .eye-btn svg { width:18px; height:18px; }
-    .row-remember { display:flex; align-items:center; justify-content:space-between; margin-bottom:26px; }
-    .remember-left { display:flex; align-items:center; gap:8px; cursor:pointer; }
-    .remember-left input[type="checkbox"] { width:16px; height:16px; accent-color:#22c55e; cursor:pointer; margin:0; }
-    .remember-left span { font-size:0.9rem; color:#374151; }
-    .forgot { font-size:0.9rem; font-weight:600; color:#22c55e; text-decoration:none; }
-    .btn-login { width:100%; padding:15px; background:linear-gradient(90deg,#22c55e,#16a34a); color:#fff; font-size:1rem; font-weight:700; border:none; border-radius:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:opacity 0.2s,transform 0.15s; margin-bottom:24px; font-family:inherit; }
-    .btn-login:hover { opacity:0.92; transform:translateY(-1px); }
-    .login-signup { text-align:center; font-size:0.9rem; color:#6b7280; }
-    .login-signup a { color:#22c55e; font-weight:600; text-decoration:none; }
-  </style>
+  <title>RYDR - Sign In</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -103,102 +26,77 @@
 </aside>
 
 <main class="right">
-  <!-- PANEL 1 -->
+  <div class="admin-access-wrap" id="admin-portal-button">
+    <button class="btn-admin-small" onclick="openLogin(null, 'admin account')">
+      <span>🛡️</span> Admin Portal
+    </button>
+  </div>
+
   <div class="panel visible" id="panel-select">
     <h2>Welcome Back</h2>
     <p class="subtitle">Select your role to sign in</p>
     <div class="roles">
       <div class="role-card" onclick="openLogin(this,'passenger account')">
         <div class="role-icon ic-p">👥</div>
-        <div class="role-info"><div class="role-title">Passenger</div><div class="role-desc">Find and book rides</div></div>
+        <div class="role-info">
+          <div class="role-title">Passenger</div>
+          <div class="role-desc">Find and book rides</div>
+        </div>
         <span class="arrow">›</span>
       </div>
       <div class="role-card" onclick="openLogin(this,'driver account')">
         <div class="role-icon ic-d">🚗</div>
-        <div class="role-info"><div class="role-title">Driver</div><div class="role-desc">Offer rides and earn</div></div>
-        <span class="arrow">›</span>
-      </div>
-      <div class="role-card" onclick="openLogin(this,'admin account')">
-        <div class="role-icon ic-a">🛡️</div>
-        <div class="role-info"><div class="role-title">Admin</div><div class="role-desc">Manage platform</div></div>
+        <div class="role-info">
+          <div class="role-title">Driver</div>
+          <div class="role-desc">Offer rides and earn</div>
+        </div>
         <span class="arrow">›</span>
       </div>
     </div>
     <p class="signup">Don't have an account? <a href="#">Sign up</a></p>
   </div>
 
-  <!-- PANEL 2 -->
   <div class="panel hidden" id="panel-login">
     <button class="back-btn" onclick="goBack()">
       <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-      Change role
+      Back to selection
     </button>
     <div class="login-title">Welcome Back</div>
     <div class="login-sub" id="login-sub">Sign in to your account</div>
 
     <label class="field-label">Email Address</label>
     <div class="field-wrap">
-      <span class="field-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></span>
+      <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9ca3af; display:flex;"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></span>
       <input type="email" placeholder="your@email.com" />
     </div>
 
     <label class="field-label">Password</label>
     <div class="field-wrap">
-      <span class="field-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span>
-      <input type="password" id="pwd-input" placeholder="Enter your password" />
-      <button class="eye-btn" onclick="togglePwd()" type="button">
-        <svg id="eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-        <svg id="eye-closed" style="display:none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
-      </button>
+      <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9ca3af; display:flex;"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span>
+      <input type="password" placeholder="Enter your password" />
     </div>
 
-    <div class="row-remember">
-      <label class="remember-left"><input type="checkbox" /><span>Remember me</span></label>
-      <a href="#" class="forgot">Forgot Password?</a>
-    </div>
-
-    <button class="btn-login">
-      Log In
-      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-    </button>
-
+    <button class="btn-login">Log In</button>
     <p class="login-signup">Don't have an account? <a href="#">Sign up</a></p>
   </div>
 </main>
 
 <script>
+// Carousel Logic
 const reviews = [
-  { s:5, t:'"Saved 450 points on my commute today! The platform is so easy to use."',              n:'Sanjay Kumar',  r:'Daily Commuter',     photo:'https://randomuser.me/api/portraits/men/44.jpg' },
-  { s:5, t:'"Found a carpool buddy within minutes and saved so much on fuel this month!"',         n:'Akash Geo',     r:'Office Commuter',    photo:'https://randomuser.me/api/portraits/men/32.jpg'   },
-  { s:5, t:'"The rewards system is genius. I earn enough points for free coffee every week!"',     n:'Shresta Brijesh',     r:'Frequent Rider',     photo:'https://randomuser.me/api/portraits/women/68.jpg' },
-  { s:4, t:'"Really good app overall. Wish the map loaded faster, but rides are always on time."', n:'Jackson Shelvi',     r:'Weekly Commuter',    photo:'https://randomuser.me/api/portraits/men/45.jpg'   },
-  { s:5, t:'"Joined a month ago and already cut my carbon footprint by 30 kg. Incredible!"',      n:'Riya Lawrence',    r:'Eco Commuter',       photo:'https://randomuser.me/api/portraits/women/26.jpg' },
-  { s:5, t:'"As a driver I earn extra income every morning. Best side hustle I\'ve ever had."',   n:'Sanju Krishna P M',     r:'Driver Partner',     photo:'https://randomuser.me/api/portraits/men/76.jpg'   },
-  { s:5, t:'"Matched with the same co-rider for weeks now — feels like a real community."',       n:'Gowry Saraswathy',    r:'Passenger',          photo:'https://randomuser.me/api/portraits/women/55.jpg' },
-  { s:4, t:'"Great concept and smooth experience. A few more payment options would be perfect."', n:'Ambady sasidharan',    r:'Tech Worker',        photo:'https://randomuser.me/api/portraits/men/11.jpg'   },
-  { s:5, t:'"I never thought carpooling could be this seamless. RYDR made it effortless!"',       n:'Silpa Suresh',       r:'Student Commuter',   photo:'https://randomuser.me/api/portraits/women/78.jpg' },
-  { s:5, t:'"Live tracking gives me real peace of mind. My family always knows I\'m safe."',      n:'Nila Ajith S',  r:'Night Shift Worker', photo:'https://randomuser.me/api/portraits/women/90.jpg' },
-  { s:5, t:'"Saved over ₹4000 this month by sharing rides. The savings add up so fast!"',         n:'Sabari Vijayan',   r:'Daily Passenger',    photo:'https://randomuser.me/api/portraits/men/52.jpg'   },
-  { s:4, t:'"Solid app with clean design. Notifications can be a bit much but easy to manage."',  n:'Andrew Jerry',   r:'Remote Worker',      photo:'https://randomuser.me/api/portraits/men/33.jpg' },
-  { s:5, t:'"RYDR changed how I commute. The points leaderboard keeps me motivated daily!"',      n:'Shahir N',  r:'Competitive Rider',  photo:'https://randomuser.me/api/portraits/men/64.jpg'   },
-  { s:5, t:'"I drive two passengers every morning — the bonus points structure is brilliant."',   n:'Gangothri',    r:'Driver Partner',     photo:'https://randomuser.me/api/portraits/women/17.jpg' },
-  { s:5, t:'"The CO₂ tracker is a game changer. Knowing my exact impact makes me proud."',        n:'Dhananjay R',    r:'Green Commuter',     photo:'https://randomuser.me/api/portraits/men/29.jpg'   },
-  { s:4, t:'"Great app, very user-friendly. Would love a dark mode but experience is top notch."',n:'Jyotsana Teressa George',    r:'Regular Rider',      photo:'https://randomuser.me/api/portraits/women/48.jpg' },
-  { s:5, t:'"Matched with someone from my own street! RYDR turned strangers into friends."',      n:'Naveen M S ',     r:'Suburban Commuter',  photo:'https://randomuser.me/api/portraits/men/83.jpg'   },
-  { s:5, t:'"The ride scheduling feature is brilliant. I book my whole week every Sunday."',      n:'Jilsiya Ali',     r:'Planner Commuter',   photo:'https://randomuser.me/api/portraits/women/62.jpg' },
-  { s:5, t:'"New to the city — RYDR helped me discover routes and meet great locals!"',           n:'Adarsh K Ajith', r:'New Resident',       photo:'https://randomuser.me/api/portraits/men/18.jpg'   },
-  { s:4, t:'"Really positive experience overall. Occasional surge pricing is the only downside."',n:'Milan S Nair',  r:'Daily Commuter',     photo:'https://randomuser.me/api/portraits/men/71.jpg' },
+  { s:5, t:'"Saved 450 points on my commute today! The platform is so easy to use."', n:'Sanjay Kumar', r:'Daily Commuter', photo:'https://randomuser.me/api/portraits/men/44.jpg' },
+  { s:5, t:'"Found a carpool buddy within minutes and saved so much on fuel this month!"', n:'Akash Geo', r:'Office Commuter', photo:'https://randomuser.me/api/portraits/men/32.jpg' },
+  { s:5, t:'"The rewards system is genius. I earn enough points for free coffee every week!"', n:'Shresta Brijesh', r:'Frequent Rider', photo:'https://randomuser.me/api/portraits/women/68.jpg' }
 ];
 
 const box = document.getElementById('carousel');
 const dotsEl = document.getElementById('dots');
-let cur = 0, timer;
-const star = n => '★'.repeat(n) + '☆'.repeat(5-n);
+let cur = 0;
 
 reviews.forEach((r,i) => {
   const s = document.createElement('div');
   s.className = 'review-slide'+(i===0?' active':'');
-  s.innerHTML = `<div class="stars">${star(r.s)}</div><p class="review-text">${r.t}</p><div class="reviewer"><img class="avatar" src="${r.photo}" alt="${r.n}"><div><div class="rev-name">${r.n}</div><div class="rev-role">${r.r}</div></div></div>`;
+  s.innerHTML = `<div class="stars">${'★'.repeat(r.s)}</div><p class="review-text">${r.t}</p><div class="reviewer"><img class="avatar" src="${r.photo}" alt="${r.n}"><div><div class="rev-name">${r.n}</div><div class="rev-role">${r.r}</div></div></div>`;
   box.appendChild(s);
   const d = document.createElement('div');
   d.className = 'dot'+(i===0?' active':'');
@@ -206,36 +104,35 @@ reviews.forEach((r,i) => {
   dotsEl.appendChild(d);
 });
 
-const slides = box.querySelectorAll('.review-slide');
-const dots   = dotsEl.querySelectorAll('.dot');
-
 function goTo(n) {
+  const slides = box.querySelectorAll('.review-slide');
+  const dots = dotsEl.querySelectorAll('.dot');
+  if(!slides.length) return;
   slides[cur].classList.remove('active'); dots[cur].classList.remove('active');
   cur = (n+reviews.length)%reviews.length;
   slides[cur].classList.add('active'); dots[cur].classList.add('active');
-  clearInterval(timer); timer = setInterval(()=>goTo(cur+1),4200);
 }
-timer = setInterval(()=>goTo(cur+1),4200);
+setInterval(()=>goTo(cur+1),4200);
 
+// Transition Logic
 function openLogin(card, label) {
   document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));
-  card.classList.add('selected');
+  if(card) card.classList.add('selected');
   document.getElementById('login-sub').textContent = `Sign in to your ${label}`;
+  
+  document.getElementById('admin-portal-button').style.opacity = '0';
+  document.getElementById('admin-portal-button').style.pointerEvents = 'none';
+
   document.getElementById('panel-select').classList.replace('visible','hidden');
   document.getElementById('panel-login').classList.replace('hidden','visible');
 }
 
 function goBack() {
+  document.getElementById('admin-portal-button').style.opacity = '1';
+  document.getElementById('admin-portal-button').style.pointerEvents = 'auto';
+
   document.getElementById('panel-login').classList.replace('visible','hidden');
   document.getElementById('panel-select').classList.replace('hidden','visible');
-}
-
-function togglePwd() {
-  const inp = document.getElementById('pwd-input');
-  const show = inp.type==='password';
-  inp.type = show?'text':'password';
-  document.getElementById('eye-open').style.display  = show?'none':'block';
-  document.getElementById('eye-closed').style.display = show?'block':'none';
 }
 </script>
 </body>
