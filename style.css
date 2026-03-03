@@ -1,0 +1,174 @@
+:root {
+    --rydr-green: #00B368;
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    /* This gradient is now soft and moves from a light green to white. */
+    background: linear-gradient(135deg, #f0fff4 0%, #fdfdfd 40%, #ffffff 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 5%;
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+    position: relative;
+    z-index: 10; /* Ensures navbar is above the background gradient */
+}
+
+.logo { font-weight: bold; color: var(--rydr-green); font-size: 1.5rem; }
+
+/* Fixed Navigation Items */
+.nav-item {
+    text-decoration: none;
+    color: #666;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+/* Green look only for active nav link */
+.nav-item.active {
+    background: var(--rydr-green);
+    color: white !important;
+}
+
+.pts-pill { background: #f0fdf4; padding: 5px 12px; border-radius: 8px; font-weight: bold; color: var(--rydr-green); }
+
+/* --- Hero Section with Background Gradient --- */
+.hero { 
+    text-align: center; 
+    padding: 100px 20px 140px; /* Increased padding to create space around the input card */
+    position: relative;
+    flex-grow: 1; /* Pushes footer if present down */
+}
+
+/* This creates the subtle color shade around the input place */
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 5%;
+    left: 10%;
+    width: 80%;
+    height: 90%;
+    /* Subtle radial gradient centered near the card */
+    background: radial-gradient(circle, rgba(200, 240, 210, 0.4) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 100px;
+    filter: blur(80px); /* Blurs the edges to make it a soft shade */
+    z-index: -1; /* Placed behind the content */
+}
+
+.badge { 
+    display: inline-block; 
+    padding: 8px 20px; 
+    border: 1px solid #e0f2f1; 
+    border-radius: 30px; 
+    font-size: 0.85rem; 
+    margin-bottom: 30px; 
+    background: white; 
+    color: #444;
+}
+h1 { font-size: 3.8rem; margin-bottom: 15px; font-weight: 800; line-height: 1.1; }
+.green-text { color: var(--rydr-green); }
+.subtitle { color: #64748b; max-width: 600px; margin: 0 auto 60px; font-size: 1.1rem; }
+
+/* The Search Card (Glassmorphism effect) */
+.search-card {
+    background: rgba(255, 255, 255, 0.9); /* Translucent white */
+    backdrop-filter: blur(10px); /* Blurs the background gradient behind it */
+    max-width: 950px;
+    margin: 0 auto;
+    padding: 40px;
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.05); /* Soft, natural shadow */
+    position: relative;
+    z-index: 5;
+}
+
+/* --- Centered Pill Tabs --- */
+.tab-center-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.tab-header {
+    display: inline-flex;
+    background: #f1f5f9;
+    padding: 6px;
+    border-radius: 16px;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 12px 28px;
+    cursor: pointer;
+    font-weight: 700;
+    color: #94a3b8;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.tab-btn.active {
+    background: white;
+    color: var(--rydr-green);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+/* Grid Layouts */
+.input-grid { display: grid; gap: 24px; text-align: left; }
+
+.book-now-mode {
+    grid-template-columns: 1fr 1fr;
+    max-width: 650px;
+    margin: 0 auto;
+}
+
+.schedule-mode {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 100%;
+}
+
+.field label { 
+    display: block; 
+    font-size: 0.75rem; 
+    color: var(--rydr-green); 
+    font-weight: bold; 
+    margin-bottom: 10px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px;
+}
+
+.field input { 
+    width: 100%; 
+    padding: 14px; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 12px; 
+    box-sizing: border-box; 
+    outline: none; 
+    font-size: 0.95rem;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+
+.field input:focus {
+    border-color: var(--rydr-green);
+    box-shadow: 0 0 0 3px rgba(0, 179, 104, 0.08);
+}
+
+.options-row { display: flex; justify-content: center; gap: 40px; margin: 30px 0; font-size: 0.9rem; color: #475569; }
+.search-btn { width: 100%; background: var(--rydr-green); color: white; border: none; padding: 20px; border-radius: 16px; font-size: 1.1rem; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+.search-btn:hover { background: #009e5b; }
+
+.hidden { display: none !important; }
