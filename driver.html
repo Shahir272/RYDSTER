@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RYDR – Driver</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <link rel="stylesheet" href="driver.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     LEFT — DRIVER PANEL
+═══════════════════════════════════════════════════════════ -->
+<div class="left">
+
+  <!-- Logo -->
+  <div class="logo">
+    <div class="logo-icon">🚗</div>
+    <span class="logo-text">RYDR</span>
+    <span style="margin-left:auto;font-size:0.7rem;font-weight:700;background:rgba(255,255,255,0.2);color:white;padding:0.22rem 0.65rem;border-radius:20px;letter-spacing:0.05em;">DRIVER</span>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="driver-stats">
+    <div class="dstat"><span class="dstat-val">4.9 ⭐</span><span class="dstat-lbl">Rating</span></div>
+    <div class="dstat"><span class="dstat-val">128</span><span class="dstat-lbl">Rides</span></div>
+    <div class="dstat"><span class="dstat-val">₹18.4K</span><span class="dstat-lbl">Earned</span></div>
+  </div>
+
+  <!-- Mode Toggle -->
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btnPost" onclick="setMode('post')">🗓️ Post a Ride</button>
+    <button class="mode-btn"        id="btnNow"  onclick="setMode('now')">⚡ Find Passengers Now</button>
+  </div>
+
+  <!-- Section Heading -->
+  <div class="section-head" id="sectionHead">Your Route</div>
+
+  <!-- Route Inputs -->
+  <div class="route-container">
+    <div class="route-line"></div>
+
+    <div class="location-group">
+      <div class="location-label">From</div>
+      <div class="location-input-wrap">
+        <div class="loc-dot dot-from">A</div>
+        <input type="text" id="fromInput" class="location-input" placeholder="Starting point…" autocomplete="off"/>
+      </div>
+      <div class="dropdown" id="fromDd"></div>
+    </div>
+
+    <div class="location-group">
+      <div class="location-label">To</div>
+      <div class="location-input-wrap">
+        <div class="loc-dot dot-to">B</div>
+        <input type="text" id="toInput" class="location-input" placeholder="Destination…" autocomplete="off"/>
+      </div>
+      <div class="dropdown" id="toDd"></div>
+    </div>
+  </div>
+
+  <!-- Date & Time (Post mode only) -->
+  <div class="dt-row" id="dtRow">
+    <div class="dt-group">
+      <label>Date</label>
+      <input type="date" class="dt-input" id="dateInput"/>
+    </div>
+    <div class="dt-group">
+      <label>Departure Time</label>
+      <input type="time" class="dt-input" id="timeInput"/>
+    </div>
+  </div>
+
+  <!-- Seats & Price (Post mode only) -->
+  <div class="trip-details" id="tripDetails">
+    <div class="detail-group">
+      <label>Available Seats</label>
+      <div class="detail-input-wrap">
+        <span class="d-icon">💺</span>
+        <input type="number" class="detail-input" id="seatsInput" min="1" max="6" placeholder="e.g. 3"/>
+      </div>
+    </div>
+    <div class="detail-group">
+      <label>Price per Seat (₹)</label>
+      <div class="detail-input-wrap">
+        <span class="d-icon">₹</span>
+        <input type="number" class="detail-input" id="priceInput" min="0" placeholder="Auto"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preferences (Post mode only) -->
+  <div class="prefs-row" id="prefsRow">
+    <button class="pref-chip" onclick="togglePref('ac',this)">❄️ AC</button>
+    <button class="pref-chip" onclick="togglePref('music',this)">🎵 Music OK</button>
+    <button class="pref-chip" onclick="togglePref('ladies',this)">👩 Ladies Only</button>
+    <button class="pref-chip" onclick="togglePref('pets',this)">🐾 Pets OK</button>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-row">
+    <button class="btn-post" onclick="handleAction()">
+      <span id="postBtnIcon">🚀</span>
+      <span id="postBtnLabel">Post Ride</span>
+    </button>
+    <button class="btn-preview" onclick="previewRoute()" title="Preview route on map">
+      🗺️ Preview
+    </button>
+  </div>
+
+</div><!-- /left -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     RIGHT — MAP
+═══════════════════════════════════════════════════════════ -->
+<div class="right">
+  <div id="map"></div>
+
+  <!-- Empty state -->
+  <div class="map-placeholder" id="mapPlaceholder">
+    <div class="map-placeholder-icon">🚗</div>
+    <div class="map-placeholder-text">Enter your route to preview on map</div>
+  </div>
+
+  <!-- Active field badge -->
+  <div class="map-badge" id="mapBadge"></div>
+
+  <!-- Drag hint -->
+  <div class="map-hint" id="mapHint">Drag the pin to fine-tune your location</div>
+
+  <!-- Route card -->
+  <div class="route-card" id="routeCard">
+    <div class="route-card-inner">
+      <div class="route-stat">
+        <div class="route-stat-icon">📍</div>
+        <div>
+          <div class="route-stat-val" id="routeDist">—</div>
+          <div class="route-stat-lbl">Distance</div>
+        </div>
+      </div>
+      <div class="route-divider"></div>
+      <div class="route-stat">
+        <div class="route-stat-icon">🕐</div>
+        <div>
+          <div class="route-stat-val" id="routeTime">—</div>
+          <div class="route-stat-lbl">Drive Time</div>
+        </div>
+      </div>
+      <div class="route-divider"></div>
+      <div class="route-stat">
+        <div class="route-stat-icon">💺</div>
+        <div>
+          <div class="route-stat-val earn" id="routePrice">—</div>
+          <div class="route-stat-lbl">Per Seat</div>
+        </div>
+      </div>
+    </div>
+    <!-- Earning strip -->
+    <div class="route-card-earn" id="routeEarn">
+      <span>💰</span>
+      <span id="routeEarnAmt">Calculating earnings…</span>
+    </div>
+    <!-- Loader -->
+    <div class="route-card-loader" id="routeLoader">
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+      <span>Calculating route…</span>
+    </div>
+  </div>
+
+  <!-- Confirm pin bar -->
+  <div class="confirm-bar" id="confirmBar">
+    <div class="confirm-address">
+      <div class="confirm-address-label" id="confirmForLabel">Confirming Start Point</div>
+      <div class="confirm-address-text"  id="confirmAddressText">Fetching address…</div>
+    </div>
+    <button class="confirm-btn" onclick="confirmLocation()">✓ Confirm</button>
+  </div>
+
+  <!-- Passenger results overlay (Find Now mode) -->
+  <div class="passengers-overlay" id="passengerPanel">
+    <div class="po-header">
+      <div class="po-title">🧍 Nearby Passengers</div>
+      <button class="po-close" onclick="closePassengerPanel()">✕</button>
+    </div>
+    <div id="passengerList"></div>
+  </div>
+
+  <!-- Post success toast -->
+  <div class="post-toast" id="postToast">
+    <span>✅</span>
+    <span class="toast-msg"></span>
+  </div>
+
+</div><!-- /right -->
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="places.js"></script>
+<script src="carousel.js"></script>
+<script src="driver.js"></script>
+</body>
+</html>
