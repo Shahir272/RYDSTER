@@ -31,7 +31,7 @@ function handleLogin() {
 
   btn.textContent = 'Signing in…'; btn.style.opacity = '0.75'; btn.disabled = true;
 
-  const routes = { passenger: 'rydster.html', driver: 'rydster.html', admin: 'rydster.html' };
+  const routes = { passenger: 'rydster.html', driver: 'driver.html', admin: 'rydster.html' };
   setTimeout(() => { window.location.href = routes[currentRole] || 'rydster.html'; }, 900);
 }
 
