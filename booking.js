@@ -1,15 +1,18 @@
 // ─── RYDR booking.js ─────────────────────────────────────────────────────────
 let mode = 'now', cachedGPS = null, activeField = null;
-let map = null, marker = null, pendingLatLng = null, pendingAddress = null;
+let map = null, pendingLatLng = null, pendingAddress = null;
+const markers   = { from: null, to: null };
 const confirmed = { from: null, to: null };
+let routeLayer  = null;
+let routeShown  = false;
 
-// Date defaults
+// ── DATE DEFAULTS ──
 const nowD = new Date();
 document.getElementById('dateInput').valueAsDate = nowD;
 document.getElementById('timeInput').value =
   `${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`;
 
-// ── TOGGLE MODE ──
+// ── MODE TOGGLE ──
 function setMode(m) {
   mode = m;
   document.getElementById('btnNow').classList.toggle('active', m === 'now');
@@ -18,7 +21,7 @@ function setMode(m) {
   document.getElementById('btnLabel').textContent = m === 'now' ? 'Find a Ride Now' : 'Schedule Ride';
 }
 
-// ── MAP ──
+// ── MAP INIT ──
 function initMap(lat, lng, zoom) {
   if (!map) {
     map = L.map('map', { zoomControl: true }).setView([lat, lng], zoom);
@@ -31,51 +34,59 @@ function initMap(lat, lng, zoom) {
   }
 }
 
+// ── PIN ICON ──
 function pinIcon(field) {
   const color = field === 'from' ? '#2dbe60' : '#f5a623';
   const label = field === 'from' ? 'A' : 'B';
   return L.divIcon({
-    html: `<div style="width:32px;height:42px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 3px 12px rgba(0,0,0,0.3);"></div>
-           <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-38%);color:white;font-weight:900;font-size:13px;font-family:Inter,sans-serif;">${label}</div>`,
+    html: `<div style="width:32px;height:42px;background:${color};border-radius:50% 50% 50% 0;
+             transform:rotate(-45deg);border:3px solid white;box-shadow:0 3px 12px rgba(0,0,0,0.3);"></div>
+           <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-38%);
+             color:white;font-weight:900;font-size:13px;font-family:Inter,sans-serif;">${label}</div>`,
     className: '', iconSize: [32, 42], iconAnchor: [16, 42],
   });
 }
 
+// ── PLACE PIN ──
 function placePin(latlng) {
   pendingLatLng = latlng;
-  if (marker) { marker.setLatLng(latlng); }
-  else {
-    marker = L.marker(latlng, { icon: pinIcon(activeField), draggable: true }).addTo(map);
-    marker.on('dragend', e => placePin(e.target.getLatLng()));
+  if (markers[activeField]) {
+    markers[activeField].setLatLng(latlng);
+  } else {
+    markers[activeField] = L.marker(latlng, { icon: pinIcon(activeField), draggable: true }).addTo(map);
+    markers[activeField].on('dragend', e => placePin(e.target.getLatLng()));
   }
-  marker.setIcon(pinIcon(activeField));
+  markers[activeField].setIcon(pinIcon(activeField));
 
   const hint = document.getElementById('mapHint');
   hint.classList.add('show');
   setTimeout(() => hint.classList.remove('show'), 2500);
-
   reverseGeocode(latlng.lat, latlng.lng);
 }
 
+// ── REVERSE GEOCODE ──
 async function reverseGeocode(lat, lng) {
   const bar = document.getElementById('confirmBar');
   const txt = document.getElementById('confirmAddressText');
   txt.textContent = 'Fetching address…';
   bar.classList.add('visible');
   try {
-    const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, { headers: {'Accept-Language':'en'} });
+    const res  = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+      { headers: { 'Accept-Language': 'en' } }
+    );
     const data = await res.json();
-    const a = data.address;
-    const parts = [];
-    if (a.road || a.pedestrian || a.footway) parts.push(a.road || a.pedestrian || a.footway);
-    if (a.suburb || a.neighbourhood || a.quarter) parts.push(a.suburb || a.neighbourhood || a.quarter);
+    const a = data.address, parts = [];
+    if (a.road || a.pedestrian || a.footway)       parts.push(a.road || a.pedestrian || a.footway);
+    if (a.suburb || a.neighbourhood || a.quarter)  parts.push(a.suburb || a.neighbourhood || a.quarter);
     if (a.town || a.city || a.village || a.county) parts.push(a.town || a.city || a.village || a.county);
-    if (a.state_district) parts.push(a.state_district);
+    if (a.state_district)                          parts.push(a.state_district);
     pendingAddress = parts.length ? parts.join(', ') : data.display_name.split(',').slice(0,3).join(',');
   } catch { pendingAddress = `${lat.toFixed(5)}, ${lng.toFixed(5)}`; }
   document.getElementById('confirmAddressText').textContent = pendingAddress;
 }
 
+// ── CONFIRM LOCATION ──
 function confirmLocation() {
   if (!activeField || !pendingAddress) return;
   const inp = document.getElementById(activeField === 'from' ? 'fromInput' : 'toInput');
@@ -83,12 +94,14 @@ function confirmLocation() {
   inp.classList.add('confirmed');
   confirmed[activeField] = { lat: pendingLatLng.lat, lng: pendingLatLng.lng, address: pendingAddress };
   document.getElementById('confirmBar').classList.remove('visible');
+  if (confirmed.from && confirmed.to) drawRoute();
 }
 
+// ── SHOW MAP FOR PLACE ──
 function showMapForPlace(place, field) {
   activeField = field;
   const badge = document.getElementById('mapBadge');
-  badge.className = `map-badge ${field}`;
+  badge.className   = `map-badge ${field}`;
   badge.textContent = field === 'from' ? '📍 Pickup' : '📍 Drop';
   document.getElementById('confirmForLabel').textContent = field === 'from' ? 'Confirming Pickup' : 'Confirming Drop';
   document.getElementById('mapPlaceholder').classList.add('hide');
@@ -116,33 +129,149 @@ async function useGPSLocation(field) {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════
+// ── ROUTE ──
+// ══════════════════════════════════════════════════════════════════
+
+function clearRoute() {
+  if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+  document.getElementById('routeCard').classList.remove('visible');
+  document.getElementById('routeLoader').classList.remove('show');
+  document.getElementById('routeCost').classList.remove('fare');
+  routeShown = false;
+}
+
+async function drawRoute() {
+  if (!confirmed.from || !confirmed.to) return;
+  clearRoute();
+
+  const card   = document.getElementById('routeCard');
+  const loader = document.getElementById('routeLoader');
+  card.classList.add('visible');
+  loader.classList.add('show');
+  setRouteStats('—', '—', '—');
+
+  const { lat: lat1, lng: lng1 } = confirmed.from;
+  const { lat: lat2, lng: lng2 } = confirmed.to;
+
+  try {
+    const url  = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (!data.routes || !data.routes.length) throw new Error('no route');
+
+    const route  = data.routes[0];
+    const coords = route.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+
+    // Layer group for both lines
+    routeLayer = L.layerGroup().addTo(map);
+
+    // Glow underlay
+    L.polyline(coords, {
+      color: 'rgba(45,190,96,0.2)', weight: 14,
+      lineCap: 'round', lineJoin: 'round',
+    }).addTo(routeLayer);
+
+    // Animated dashed main line
+    const line = L.polyline(coords, {
+      color: '#2dbe60', weight: 5,
+      lineCap: 'round', lineJoin: 'round',
+      dashArray: '14 7',
+    }).addTo(routeLayer);
+
+    routeShown = true;
+    animateDash(line);
+
+    map.fitBounds(L.latLngBounds(coords), { padding: [60, 60] });
+
+    const km   = route.distance / 1000;
+    const fare = Math.round(25 + km * 12);
+    loader.classList.remove('show');
+    setRouteStats(formatDist(route.distance), formatDur(route.duration), `₹${fare} – ₹${Math.round(fare * 1.2)}`);
+    document.getElementById('routeCost').classList.add('fare');
+
+  } catch {
+    // Straight-line fallback
+    const line = L.polyline([[lat1,lng1],[lat2,lng2]], {
+      color: '#f5a623', weight: 3, dashArray: '8 6',
+    }).addTo(map);
+    routeLayer = line;
+    routeShown = true;
+    map.fitBounds(line.getBounds(), { padding: [60, 60] });
+
+    const km   = haversine(lat1, lng1, lat2, lng2);
+    const fare = Math.round(25 + km * 12);
+    loader.classList.remove('show');
+    setRouteStats(`~${km.toFixed(1)} km`, `~${formatDur((km / 40) * 3600)}`, `₹${fare} – ₹${Math.round(fare * 1.2)}`);
+    document.getElementById('routeCost').classList.add('fare');
+  }
+}
+
+function animateDash(polyline) {
+  let offset = 0;
+  const step = () => {
+    offset = (offset + 0.8) % 21;
+    try { polyline.setStyle({ dashOffset: String(-offset) }); } catch {}
+    if (routeShown) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function setRouteStats(dist, time, cost) {
+  document.getElementById('routeDist').textContent = dist;
+  document.getElementById('routeTime').textContent = time;
+  document.getElementById('routeCost').textContent = cost;
+}
+
+function formatDist(m) {
+  return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`;
+}
+function formatDur(sec) {
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m} min`;
+}
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ══════════════════════════════════════════════════════════════════
 // ── DROPDOWN ──
+// ══════════════════════════════════════════════════════════════════
+
 function highlight(text, q) {
   if (!q) return text;
   return text.replace(new RegExp(`(${q})`, 'gi'), '<strong style="color:var(--green-deep)">$1</strong>');
 }
-
 function closeAll() { document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open')); }
 
 function buildDropdown(dd, query, inputId) {
   dd.innerHTML = '';
   const field = inputId === 'fromInput' ? 'from' : 'to';
-  const locEl = Object.assign(document.createElement('div'), { className: 'dd-item use-location', innerHTML: '<span>📍</span><span>Use my current location</span>' });
+
+  const locEl = Object.assign(document.createElement('div'), {
+    className: 'dd-item use-location',
+    innerHTML: '<span>📍</span><span>Use my current location</span>',
+  });
   locEl.onclick = () => { useGPSLocation(field); closeAll(); };
   dd.appendChild(locEl);
 
   const q    = query.toLowerCase().trim();
   const list = q ? PLACES.filter(p => p.name.toLowerCase().includes(q) || p.district.toLowerCase().includes(q)) : PLACES;
 
-  if (!list.length) { dd.insertAdjacentHTML('beforeend', '<div class="dd-no-result">No places found</div>'); return; }
+  if (!list.length) { dd.insertAdjacentHTML('beforeend','<div class="dd-no-result">No places found</div>'); return; }
 
   list.forEach(p => {
-    const el = Object.assign(document.createElement('div'), { className: 'dd-item', innerHTML: `<span>🏙️</span><span>${highlight(p.name, q)}</span><span class="dd-district">${p.district}</span>` });
+    const el = Object.assign(document.createElement('div'), {
+      className: 'dd-item',
+      innerHTML: `<span>🏙️</span><span>${highlight(p.name, q)}</span><span class="dd-district">${p.district}</span>`,
+    });
     el.onclick = () => {
-      document.getElementById(inputId).value = p.name;
-      document.getElementById(inputId).classList.remove('confirmed');
+      const inp = document.getElementById(inputId);
+      inp.value = p.name; inp.classList.remove('confirmed');
       confirmed[field] = null;
-      closeAll();
+      closeAll(); clearRoute();
       showMapForPlace(p, field);
     };
     dd.appendChild(el);
@@ -156,23 +285,45 @@ function setupInput(inputId, ddId) {
   inp.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
 }
 
-document.addEventListener('click', e => { if (!e.target.closest('.location-group') && !e.target.closest('.confirm-bar')) closeAll(); });
+document.addEventListener('click', e => {
+  if (!e.target.closest('.location-group') && !e.target.closest('.confirm-bar')) closeAll();
+});
 setupInput('fromInput', 'fromDropdown');
 setupInput('toInput',   'toDropdown');
 
 // ── GO RIDE ──
-function goRide() {
-  const from = document.getElementById('fromInput').value.trim();
-  const to   = document.getElementById('toInput').value.trim();
-  if (!from || !to) { alert('Please select both pickup and drop locations.'); return; }
-  if (from === to)  { alert('Pickup and drop cannot be the same!'); return; }
-  const btn = document.querySelector('.go-btn'), lbl = document.getElementById('btnLabel');
-  btn.style.opacity = '0.8'; lbl.textContent = 'Searching…';
-  setTimeout(() => {
-    lbl.textContent = '✓ Rides found!';
-    setTimeout(() => { lbl.textContent = mode === 'now' ? 'Find a Ride Now' : 'Schedule Ride'; btn.style.opacity = '1'; }, 2000);
-  }, 1100);
+async function goRide() {
+  const fromVal = document.getElementById('fromInput').value.trim();
+  const toVal   = document.getElementById('toInput').value.trim();
+  if (!fromVal || !toVal) { alert('Please select both pickup and drop locations.'); return; }
+  if (fromVal === toVal)  { alert('Pickup and drop cannot be the same!'); return; }
+
+  if (confirmed.from && confirmed.to) { drawRoute(); return; }
+
+  // Auto-confirm from PLACES list if not already pin-confirmed
+  const fromPlace = PLACES.find(p => p.name.toLowerCase() === fromVal.toLowerCase());
+  const toPlace   = PLACES.find(p => p.name.toLowerCase() === toVal.toLowerCase());
+  if (fromPlace && !confirmed.from) confirmed.from = { lat: fromPlace.lat, lng: fromPlace.lng, address: fromPlace.name };
+  if (toPlace   && !confirmed.to)   confirmed.to   = { lat: toPlace.lat,   lng: toPlace.lng,   address: toPlace.name };
+
+  if (confirmed.from && confirmed.to) {
+    if (!map) {
+      document.getElementById('mapPlaceholder').classList.add('hide');
+      initMap(confirmed.from.lat, confirmed.from.lng, 10);
+      setTimeout(() => map && map.invalidateSize(), 100);
+    }
+    // Place both pins if missing
+    ['from','to'].forEach(f => {
+      if (!markers[f]) {
+        const c = confirmed[f];
+        markers[f] = L.marker([c.lat, c.lng], { icon: pinIcon(f) }).addTo(map);
+      }
+    });
+    setTimeout(() => drawRoute(), 200);
+  } else {
+    alert('Please confirm both locations on the map before searching.');
+  }
 }
 
-// Init carousel
+// ── INIT ──
 document.addEventListener('DOMContentLoaded', () => initCarousel('carousel', 'dots'));

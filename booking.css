@@ -131,4 +131,72 @@ body { display: flex; height: 100vh; }
 .map-badge.from { background: #e0f7ea; color: var(--green-deep); display: block; }
 .map-badge.to   { background: #fff4e0; color: #c07810; display: block; }
 
+/* ── ROUTE CARD ── */
+.route-card {
+  position: absolute;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+  z-index: 1000;
+  min-width: 340px;
+  max-width: 480px;
+  overflow: hidden;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.35s, transform 0.35s;
+}
+.route-card.visible {
+  opacity: 1; pointer-events: all;
+  transform: translateX(-50%) translateY(0);
+}
+
+.route-card-inner {
+  display: flex; align-items: center; gap: 0;
+  padding: 1rem 1.4rem;
+}
+
+.route-stat {
+  flex: 1; display: flex; align-items: center; gap: 0.65rem;
+}
+.route-stat-icon { font-size: 1.3rem; }
+.route-stat-val  { font-size: 1rem; font-weight: 800; color: #0d1a10; line-height: 1.1; }
+.route-stat-lbl  { font-size: 0.65rem; font-weight: 600; color: #7a9485; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; }
+
+.route-divider {
+  width: 1px; height: 36px;
+  background: #e2ede8; margin: 0 0.2rem; flex-shrink: 0;
+}
+
+/* Fare highlight */
+.route-stat-val.fare { color: var(--green-deep); }
+
+/* Loading dots */
+.route-card-loader {
+  display: none;
+  align-items: center; justify-content: center; gap: 6px;
+  padding: 0.7rem 1.4rem;
+  border-top: 1px solid #f0f7f3;
+  font-size: 0.78rem; color: var(--muted); font-weight: 500;
+}
+.route-card-loader.show { display: flex; }
+
+.loader-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); animation: bounce 0.9s infinite ease-in-out;
+}
+.loader-dot:nth-child(2) { animation-delay: 0.15s; }
+.loader-dot:nth-child(3) { animation-delay: 0.30s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+  40%           { transform: scale(1.2); opacity: 1; }
+}
+
+/* Route line pulse on map */
+@keyframes dashDraw {
+  from { stroke-dashoffset: 2000; }
+  to   { stroke-dashoffset: 0; }
+}
+
 .leaflet-control-attribution { font-size: 10px !important; }

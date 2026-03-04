@@ -80,6 +80,39 @@
   <div class="map-badge" id="mapBadge"></div>
   <div class="map-hint"  id="mapHint">Drag the pin to pinpoint your exact location</div>
 
+  <!-- Route info card -->
+  <div class="route-card" id="routeCard">
+    <div class="route-card-inner">
+      <div class="route-stat">
+        <div class="route-stat-icon">📍</div>
+        <div>
+          <div class="route-stat-val" id="routeDist">—</div>
+          <div class="route-stat-lbl">Distance</div>
+        </div>
+      </div>
+      <div class="route-divider"></div>
+      <div class="route-stat">
+        <div class="route-stat-icon">🕐</div>
+        <div>
+          <div class="route-stat-val" id="routeTime">—</div>
+          <div class="route-stat-lbl">Est. Time</div>
+        </div>
+      </div>
+      <div class="route-divider"></div>
+      <div class="route-stat">
+        <div class="route-stat-icon">💰</div>
+        <div>
+          <div class="route-stat-val" id="routeCost">—</div>
+          <div class="route-stat-lbl">Est. Fare</div>
+        </div>
+      </div>
+    </div>
+    <div class="route-card-loader" id="routeLoader">
+      <div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div>
+      <span>Calculating route…</span>
+    </div>
+  </div>
+
   <div class="confirm-bar" id="confirmBar">
     <div class="confirm-address">
       <div class="confirm-address-label" id="confirmForLabel">Confirming pickup</div>
