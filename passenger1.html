@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RYDR</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  :root {
+    --green: #2dbe60;
+    --green-dark: #1e9e4e;
+    --green-deep: #157a3c;
+    --green-panel: #24b357;
+    --white: #ffffff;
+    --off: #f0f7f3;
+    --border: #cce8d8;
+    --dark: #0d1a10;
+    --muted: #6a8f78;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ── */
+  .left {
+    width: 38%;
+    flex-shrink: 0;
+    background: var(--green-panel);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 2rem 1.8rem;
+  }
+
+  .left::before {
+    content: '';
+    position: absolute;
+    width: 360px; height: 360px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    top: -60px; right: -100px;
+    pointer-events: none;
+  }
+  .left::after {
+    content: '';
+    position: absolute;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.06);
+    bottom: -40px; left: -60px;
+    pointer-events: none;
+  }
+
+  .left-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 1;
+    margin-bottom: 1.5rem;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem;
+  }
+
+  .logo-text {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: white;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .booking-wrap {
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .booking-heading {
+    font-size: 1rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 1.1rem;
+    opacity: 0.95;
+  }
+
+  /* TOGGLE */
+  .toggle-row {
+    display: flex;
+    background: rgba(0,0,0,0.15);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 1.2rem;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 0.52rem 0.4rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+  }
+
+  .toggle-btn.active {
+    background: white;
+    color: var(--green-deep);
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  /* ROUTE */
+  .route-container {
+    position: relative;
+    margin-bottom: 1.1rem;
+  }
+
+  .route-line {
+    position: absolute;
+    left: 15px;
+    top: 46px;
+    bottom: 46px;
+    width: 2px;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.6) 0, rgba(255,255,255,0.6) 5px,
+      transparent 5px, transparent 10px
+    );
+  }
+
+  .location-group {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 0.6rem;
+  }
+
+  .location-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 0.25rem;
+    margin-left: 2.2rem;
+  }
+
+  .location-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .loc-dot {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 800;
+  }
+
+  .dot-from { background: white; color: var(--green-deep); }
+  .dot-to   { background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.7); color: white; }
+
+  .location-input {
+    flex: 1;
+    padding: 0.68rem 0.85rem;
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 9px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: white;
+    background: rgba(255,255,255,0.15);
+    outline: none;
+    transition: border-color 0.18s, background 0.18s;
+  }
+
+  .location-input::placeholder { color: rgba(255,255,255,0.45); }
+
+  .location-input:focus {
+    border-color: rgba(255,255,255,0.8);
+    background: rgba(255,255,255,0.22);
+  }
+
+  .location-input.confirmed {
+    border-color: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.25);
+  }
+
+  /* DROPDOWN */
+  .dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 37px;
+    right: 0;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.16);
+    max-height: 210px;
+    overflow-y: auto;
+    z-index: 9999;
+    display: none;
+  }
+
+  .dropdown.open { display: block; animation: dropIn 0.12s ease; }
+
+  @keyframes dropIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .dropdown::-webkit-scrollbar { width: 3px; }
+  .dropdown::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .dd-item {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.6rem 0.85rem;
+    cursor: pointer;
+    font-size: 0.84rem;
+    color: var(--dark);
+    border-bottom: 1px solid #f0f7f3;
+    transition: background 0.1s;
+  }
+
+  .dd-item:last-child { border-bottom: none; }
+  .dd-item:hover { background: #edfaf3; color: var(--green-deep); }
+
+  .dd-item.use-location {
+    color: var(--green-deep);
+    font-weight: 600;
+    background: #f2fbf6;
+    border-bottom: 1.5px solid var(--border);
+  }
+
+  .dd-item.use-location:hover { background: #e0f7ec; }
+
+  .dd-district {
+    font-size: 0.67rem;
+    color: var(--muted);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .dd-no-result {
+    padding: 0.85rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  /* DATETIME */
+  .datetime-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-bottom: 1.1rem;
+    overflow: hidden;
+    max-height: 90px;
+    opacity: 1;
+    transition: max-height 0.3s ease, opacity 0.25s ease, margin 0.3s ease;
+  }
+
+  .datetime-row.hidden { max-height: 0; opacity: 0; margin-bottom: 0; }
+
+  .field-group label {
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 0.25rem;
+  }
+
+  .field-input {
+    width: 100%;
+    padding: 0.65rem 0.8rem;
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 9px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.83rem;
+    color: white;
+    background: rgba(255,255,255,0.15);
+    outline: none;
+    color-scheme: dark;
+    transition: border-color 0.18s;
+  }
+
+  .field-input:focus { border-color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.22); }
+
+  /* GO BUTTON */
+  .go-btn {
+    width: 100%;
+    padding: 0.85rem;
+    background: white;
+    color: var(--green-deep);
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: background 0.18s, transform 0.12s, box-shadow 0.18s;
+  }
+
+  .go-btn:hover {
+    background: #e8faf0;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  }
+
+  .go-btn:active { transform: translateY(0); }
+
+  /* ── RIGHT PANEL (MAP) ── */
+  .right {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #map {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* MAP PLACEHOLDER when no location selected */
+  .map-placeholder {
+    position: absolute;
+    inset: 0;
+    background: #f0f4f2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    z-index: 10;
+    transition: opacity 0.3s;
+  }
+
+  .map-placeholder.hide { opacity: 0; pointer-events: none; }
+
+  .map-placeholder-icon { font-size: 3rem; opacity: 0.3; }
+
+  .map-placeholder-text {
+    font-size: 0.9rem;
+    color: #aaa;
+    font-weight: 500;
+  }
+
+  /* PIN CONFIRM BAR */
+  .confirm-bar {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    padding: 0.9rem 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 1000;
+    min-width: 300px;
+    max-width: 420px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+    transform: translateX(-50%) translateY(10px);
+  }
+
+  .confirm-bar.visible {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .confirm-address {
+    flex: 1;
+  }
+
+  .confirm-address-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+
+  .confirm-address-text {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--dark);
+    line-height: 1.3;
+  }
+
+  .confirm-btn {
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 9px;
+    padding: 0.55rem 1.1rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.83rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.18s;
+  }
+
+  .confirm-btn:hover { background: var(--green-dark); }
+
+  /* MAP HINT */
+  .map-hint {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.65);
+    color: white;
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 0.45rem 1rem;
+    border-radius: 20px;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+
+  .map-hint.show { opacity: 1; }
+
+  /* which field is being pinned */
+  .map-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 1000;
+    border-radius: 10px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: none;
+  }
+
+  .map-badge.from { background: #e0f7ea; color: var(--green-deep); display: block; }
+  .map-badge.to   { background: #fff4e0; color: #c07810; display: block; }
+
+  /* Leaflet overrides */
+  .leaflet-control-attribution { font-size: 10px !important; }
+</style>
+</head>
+<body>
+
+<!-- LEFT GREEN PANEL -->
+<div class="left">
+  <div class="left-logo">
+    <div class="logo-icon">🚗</div>
+    <span class="logo-text">RYDR</span>
+  </div>
+
+  <div class="booking-wrap">
+    <div class="booking-heading">Book a Ride</div>
+
+    <div class="toggle-row">
+      <button class="toggle-btn active" id="btnNow" onclick="setMode('now')">⚡ Book Now</button>
+      <button class="toggle-btn" id="btnLater" onclick="setMode('later')">🕐 Schedule for Later</button>
+    </div>
+
+    <div class="route-container">
+      <div class="route-line"></div>
+
+      <div class="location-group" id="fromGroup">
+        <div class="location-label">From</div>
+        <div class="location-input-wrap">
+          <div class="loc-dot dot-from">A</div>
+          <input type="text" id="fromInput" class="location-input" placeholder="Pickup location…" autocomplete="off" />
+        </div>
+        <div class="dropdown" id="fromDropdown"></div>
+      </div>
+
+      <div class="location-group" id="toGroup">
+        <div class="location-label">To</div>
+        <div class="location-input-wrap">
+          <div class="loc-dot dot-to">B</div>
+          <input type="text" id="toInput" class="location-input" placeholder="Drop location…" autocomplete="off" />
+        </div>
+        <div class="dropdown" id="toDropdown"></div>
+      </div>
+    </div>
+
+    <div class="datetime-row hidden" id="datetimeRow">
+      <div class="field-group">
+        <label>Date</label>
+        <input type="date" class="field-input" id="dateInput" />
+      </div>
+      <div class="field-group">
+        <label>Time</label>
+        <input type="time" class="field-input" id="timeInput" />
+      </div>
+    </div>
+
+    <button class="go-btn" onclick="goRide()">
+      <span id="btnLabel">Find a Ride Now</span>
+      <span>→</span>
+    </button>
+  </div>
+</div>
+
+<!-- RIGHT MAP PANEL -->
+<div class="right">
+  <div id="map"></div>
+
+  <!-- Placeholder before any selection -->
+  <div class="map-placeholder" id="mapPlaceholder">
+    <div class="map-placeholder-icon">🗺️</div>
+    <div class="map-placeholder-text">Select a location to view the map</div>
+  </div>
+
+  <!-- Which field is active -->
+  <div class="map-badge" id="mapBadge"></div>
+
+  <!-- Drag hint -->
+  <div class="map-hint" id="mapHint">Drag the pin to pinpoint your exact location</div>
+
+  <!-- Confirm bar -->
+  <div class="confirm-bar" id="confirmBar">
+    <div class="confirm-address">
+      <div class="confirm-address-label" id="confirmForLabel">Confirming pickup</div>
+      <div class="confirm-address-text" id="confirmAddressText">Fetching address…</div>
+    </div>
+    <button class="confirm-btn" onclick="confirmLocation()">✓ Confirm</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ── KERALA PLACES ──
+const places = [
+  {name:"Thiruvananthapuram",district:"Thiruvananthapuram",lat:8.5241,lng:76.9366},
+  {name:"Kollam",district:"Kollam",lat:8.8932,lng:76.6141},
+  {name:"Pathanamthitta",district:"Pathanamthitta",lat:9.2648,lng:76.7870},
+  {name:"Alappuzha",district:"Alappuzha",lat:9.4981,lng:76.3388},
+  {name:"Kottayam",district:"Kottayam",lat:9.5916,lng:76.5222},
+  {name:"Idukki",district:"Idukki",lat:9.9189,lng:76.9690},
+  {name:"Ernakulam",district:"Ernakulam",lat:9.9816,lng:76.2999},
+  {name:"Thrissur",district:"Thrissur",lat:10.5276,lng:76.2144},
+  {name:"Palakkad",district:"Palakkad",lat:10.7867,lng:76.6548},
+  {name:"Malappuram",district:"Malappuram",lat:11.0510,lng:76.0711},
+  {name:"Kozhikode",district:"Kozhikode",lat:11.2588,lng:75.7804},
+  {name:"Wayanad",district:"Wayanad",lat:11.6854,lng:76.1320},
+  {name:"Kannur",district:"Kannur",lat:11.8745,lng:75.3704},
+  {name:"Kasaragod",district:"Kasaragod",lat:12.4996,lng:74.9869},
+  {name:"Kochi",district:"Ernakulam",lat:9.9312,lng:76.2673},
+  {name:"Munnar",district:"Idukki",lat:10.0889,lng:77.0595},
+  {name:"Thekkady",district:"Idukki",lat:9.6000,lng:77.1667},
+  {name:"Varkala",district:"Thiruvananthapuram",lat:8.7378,lng:76.7164},
+  {name:"Kovalam",district:"Thiruvananthapuram",lat:8.3988,lng:76.9784},
+  {name:"Poovar",district:"Thiruvananthapuram",lat:8.3127,lng:77.0820},
+  {name:"Neyyattinkara",district:"Thiruvananthapuram",lat:8.4003,lng:77.0877},
+  {name:"Attingal",district:"Thiruvananthapuram",lat:8.6928,lng:76.8150},
+  {name:"Nedumangad",district:"Thiruvananthapuram",lat:8.6020,lng:77.0107},
+  {name:"Kazhakkoottam",district:"Thiruvananthapuram",lat:8.5554,lng:76.8826},
+  {name:"Punalur",district:"Kollam",lat:9.0036,lng:76.9220},
+  {name:"Karunagappally",district:"Kollam",lat:9.0576,lng:76.5340},
+  {name:"Chavara",district:"Kollam",lat:8.9963,lng:76.5496},
+  {name:"Paravur",district:"Kollam",lat:8.7975,lng:76.6764},
+  {name:"Adoor",district:"Pathanamthitta",lat:9.1516,lng:76.7416},
+  {name:"Thiruvalla",district:"Pathanamthitta",lat:9.3833,lng:76.5717},
+  {name:"Pandalam",district:"Pathanamthitta",lat:9.2200,lng:76.6619},
+  {name:"Ranni",district:"Pathanamthitta",lat:9.3836,lng:76.7844},
+  {name:"Chengannur",district:"Alappuzha",lat:9.3166,lng:76.6162},
+  {name:"Mavelikkara",district:"Alappuzha",lat:9.2637,lng:76.5536},
+  {name:"Kayamkulam",district:"Alappuzha",lat:9.1748,lng:76.5018},
+  {name:"Haripad",district:"Alappuzha",lat:9.2340,lng:76.4722},
+  {name:"Kumarakom",district:"Kottayam",lat:9.6155,lng:76.4320},
+  {name:"Pala",district:"Kottayam",lat:9.7052,lng:76.6858},
+  {name:"Changanassery",district:"Kottayam",lat:9.4432,lng:76.5419},
+  {name:"Vaikom",district:"Kottayam",lat:9.7514,lng:76.3944},
+  {name:"Ettumanoor",district:"Kottayam",lat:9.6680,lng:76.5604},
+  {name:"Thodupuzha",district:"Idukki",lat:9.8959,lng:76.7168},
+  {name:"Kumily",district:"Idukki",lat:9.6038,lng:77.1652},
+  {name:"Devikulam",district:"Idukki",lat:10.0461,lng:77.1087},
+  {name:"Aluva",district:"Ernakulam",lat:10.1065,lng:76.3519},
+  {name:"Angamaly",district:"Ernakulam",lat:10.1961,lng:76.3877},
+  {name:"Perumbavoor",district:"Ernakulam",lat:10.1104,lng:76.4724},
+  {name:"Muvattupuzha",district:"Ernakulam",lat:9.9893,lng:76.5790},
+  {name:"Kothamangalam",district:"Ernakulam",lat:10.0625,lng:76.6302},
+  {name:"Kalady",district:"Ernakulam",lat:10.1703,lng:76.4373},
+  {name:"Irinjalakuda",district:"Thrissur",lat:10.3430,lng:76.2126},
+  {name:"Chalakudy",district:"Thrissur",lat:10.3000,lng:76.3340},
+  {name:"Guruvayur",district:"Thrissur",lat:10.5943,lng:76.0449},
+  {name:"Kodungallur",district:"Thrissur",lat:10.2334,lng:76.1980},
+  {name:"Kunnamkulam",district:"Thrissur",lat:10.6501,lng:76.0801},
+  {name:"Ottappalam",district:"Palakkad",lat:10.7701,lng:76.3835},
+  {name:"Shoranur",district:"Palakkad",lat:10.7631,lng:76.2779},
+  {name:"Mannarkkad",district:"Palakkad",lat:10.9935,lng:76.4635},
+  {name:"Chittur",district:"Palakkad",lat:10.6988,lng:76.7468},
+  {name:"Tirur",district:"Malappuram",lat:10.9121,lng:75.9253},
+  {name:"Manjeri",district:"Malappuram",lat:11.1188,lng:76.1187},
+  {name:"Perinthalmanna",district:"Malappuram",lat:10.9768,lng:76.2271},
+  {name:"Ponnani",district:"Malappuram",lat:10.7773,lng:75.9258},
+  {name:"Tiruvambady",district:"Kozhikode",lat:11.3600,lng:76.0800},
+  {name:"Vadakara",district:"Kozhikode",lat:11.5917,lng:75.5957},
+  {name:"Koyilandy",district:"Kozhikode",lat:11.4400,lng:75.7084},
+  {name:"Feroke",district:"Kozhikode",lat:11.1836,lng:75.8381},
+  {name:"Thalassery",district:"Kannur",lat:11.7480,lng:75.4930},
+  {name:"Payyannur",district:"Kannur",lat:12.1001,lng:75.2055},
+  {name:"Kalpetta",district:"Wayanad",lat:11.6070,lng:76.0830},
+  {name:"Mananthavady",district:"Wayanad",lat:11.8017,lng:76.0054},
+  {name:"Sultan Bathery",district:"Wayanad",lat:11.6682,lng:76.2555},
+  {name:"Kanhangad",district:"Kasaragod",lat:12.3490,lng:75.0985},
+  {name:"Hosdurg",district:"Kasaragod",lat:12.3917,lng:75.0226},
+  {name:"Bekal",district:"Kasaragod",lat:12.3905,lng:75.0365},
+  {name:"Nedumbassery",district:"Ernakulam",lat:10.1556,lng:76.3960},
+  {name:"Kalamassery",district:"Ernakulam",lat:10.0500,lng:76.3200},
+  {name:"Vytila",district:"Ernakulam",lat:9.9700,lng:76.3100},
+  {name:"Fort Kochi",district:"Ernakulam",lat:9.9658,lng:76.2421},
+  {name:"Edapally",district:"Ernakulam",lat:10.0200,lng:76.3100},
+];
+
+// ── STATE ──
+let mode = 'now';
+let cachedGPS = null;
+let activeField = null; // 'from' or 'to'
+let map = null;
+let marker = null;
+let pendingLatLng = null;
+let pendingAddress = null;
+
+// stored confirmed coords
+const confirmed = { from: null, to: null };
+
+// ── DATE DEFAULTS ──
+const nowD = new Date();
+document.getElementById('dateInput').valueAsDate = nowD;
+document.getElementById('timeInput').value =
+  `${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`;
+
+// ── TOGGLE MODE ──
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnNow').classList.toggle('active', m==='now');
+  document.getElementById('btnLater').classList.toggle('active', m==='later');
+  document.getElementById('datetimeRow').classList.toggle('hidden', m==='now');
+  document.getElementById('btnLabel').textContent = m==='now' ? 'Find a Ride Now' : 'Schedule Ride';
+}
+
+// ── INIT MAP ──
+function initMap(lat, lng, zoom) {
+  if (!map) {
+    map = L.map('map', { zoomControl: true }).setView([lat, lng], zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    // click anywhere to reposition pin
+    map.on('click', function(e) {
+      placePin(e.latlng);
+    });
+  } else {
+    map.setView([lat, lng], zoom);
+  }
+}
+
+// ── PLACE / DRAG PIN ──
+function placePin(latlng) {
+  pendingLatLng = latlng;
+
+  const greenIcon = L.divIcon({
+    html: `<div style="
+      width:32px;height:42px;
+      background:${activeField==='from' ? '#2dbe60' : '#f5a623'};
+      border-radius:50% 50% 50% 0;
+      transform:rotate(-45deg);
+      border:3px solid white;
+      box-shadow:0 3px 12px rgba(0,0,0,0.3);
+    "></div>
+    <div style="
+      position:absolute;top:50%;left:50%;
+      transform:translate(-50%,-38%);
+      color:white;font-weight:900;font-size:13px;font-family:Inter,sans-serif;
+    ">${activeField === 'from' ? 'A' : 'B'}</div>`,
+    className: '',
+    iconSize: [32, 42],
+    iconAnchor: [16, 42],
+  });
+
+  if (marker) {
+    marker.setLatLng(latlng);
+  } else {
+    marker = L.marker(latlng, { icon: greenIcon, draggable: true }).addTo(map);
+    marker.on('dragend', function(e) {
+      placePin(e.target.getLatLng());
+    });
+  }
+
+  marker.setIcon(greenIcon);
+
+  // show hint briefly
+  const hint = document.getElementById('mapHint');
+  hint.classList.add('show');
+  setTimeout(() => hint.classList.remove('show'), 2500);
+
+  // reverse geocode
+  reverseGeocode(latlng.lat, latlng.lng);
+}
+
+// ── REVERSE GEOCODE ──
+async function reverseGeocode(lat, lng) {
+  const bar = document.getElementById('confirmBar');
+  const txt = document.getElementById('confirmAddressText');
+  txt.textContent = 'Fetching address…';
+  bar.classList.add('visible');
+
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+      { headers: { 'Accept-Language': 'en' } }
+    );
+    const data = await res.json();
+    const a = data.address;
+
+    // build a nice address string
+    const parts = [];
+    if (a.road || a.pedestrian || a.footway) parts.push(a.road || a.pedestrian || a.footway);
+    if (a.suburb || a.neighbourhood || a.quarter) parts.push(a.suburb || a.neighbourhood || a.quarter);
+    if (a.town || a.city || a.village || a.county) parts.push(a.town || a.city || a.village || a.county);
+    if (a.state_district) parts.push(a.state_district);
+
+    pendingAddress = parts.length ? parts.join(', ') : data.display_name.split(',').slice(0,3).join(',');
+    txt.textContent = pendingAddress;
+  } catch(e) {
+    pendingAddress = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    txt.textContent = pendingAddress;
+  }
+}
+
+// ── CONFIRM LOCATION ──
+function confirmLocation() {
+  if (!activeField || !pendingAddress) return;
+
+  const inputId = activeField === 'from' ? 'fromInput' : 'toInput';
+  const inp = document.getElementById(inputId);
+  inp.value = pendingAddress;
+  inp.classList.add('confirmed');
+
+  confirmed[activeField] = { lat: pendingLatLng.lat, lng: pendingLatLng.lng, address: pendingAddress };
+
+  document.getElementById('confirmBar').classList.remove('visible');
+}
+
+// ── SHOW MAP FOR PLACE ──
+function showMapForPlace(place, fieldType) {
+  activeField = fieldType;
+
+  // update badge
+  const badge = document.getElementById('mapBadge');
+  badge.className = `map-badge ${fieldType}`;
+  badge.textContent = fieldType === 'from' ? '📍 Pickup' : '📍 Drop';
+
+  // update confirm label
+  document.getElementById('confirmForLabel').textContent =
+    fieldType === 'from' ? 'Confirming Pickup' : 'Confirming Drop';
+
+  // hide placeholder
+  document.getElementById('mapPlaceholder').classList.add('hide');
+
+  // init / move map
+  initMap(place.lat, place.lng, 14);
+
+  // place default pin at place center
+  placePin(L.latLng(place.lat, place.lng));
+
+  // force leaflet to recalc size
+  setTimeout(() => map && map.invalidateSize(), 100);
+}
+
+// ── USE GPS LOCATION ──
+async function useGPSLocation(fieldType) {
+  activeField = fieldType;
+  const inputId = fieldType === 'from' ? 'fromInput' : 'toInput';
+  const inp = document.getElementById(inputId);
+  inp.value = 'Locating…'; inp.disabled = true;
+
+  if (!cachedGPS) {
+    cachedGPS = await new Promise(res => {
+      if (!navigator.geolocation) { res(null); return; }
+      navigator.geolocation.getCurrentPosition(p => res(p.coords), () => res(null), {timeout:8000});
+    });
+  }
+
+  if (cachedGPS) {
+    inp.value = 'My Current Location 📍';
+    inp.disabled = false;
+
+    // fake place object for GPS coords
+    const fakePlaceObj = { lat: cachedGPS.latitude, lng: cachedGPS.longitude };
+    showMapForPlace(fakePlaceObj, fieldType);
+
+    // update confirm label
+    document.getElementById('confirmForLabel').textContent =
+      fieldType === 'from' ? 'Confirming Pickup' : 'Confirming Drop';
+  } else {
+    inp.value = '';
+    inp.placeholder = 'Location access denied';
+    inp.disabled = false;
+  }
+}
+
+// ── DROPDOWN ──
+function buildDropdown(dd, query, inputId) {
+  dd.innerHTML = '';
+  const fieldType = inputId === 'fromInput' ? 'from' : 'to';
+
+  const locEl = document.createElement('div');
+  locEl.className = 'dd-item use-location';
+  locEl.innerHTML = `<span>📍</span><span>Use my current location</span>`;
+  locEl.onclick = () => { useGPSLocation(fieldType); closeAll(); };
+  dd.appendChild(locEl);
+
+  const q = query.toLowerCase().trim();
+  const list = q
+    ? places.filter(p => p.name.toLowerCase().includes(q) || p.district.toLowerCase().includes(q))
+    : places;
+
+  if (!list.length) {
+    const no = document.createElement('div');
+    no.className = 'dd-no-result'; no.textContent = 'No places found';
+    dd.appendChild(no); return;
+  }
+
+  list.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'dd-item';
+    el.innerHTML = `<span>🏙️</span><span>${highlight(p.name, q)}</span><span class="dd-district">${p.district}</span>`;
+    el.onclick = () => {
+      document.getElementById(inputId).value = p.name;
+      document.getElementById(inputId).classList.remove('confirmed');
+      confirmed[fieldType] = null;
+      closeAll();
+      showMapForPlace(p, fieldType);
+    };
+    dd.appendChild(el);
+  });
+}
+
+function highlight(text, q) {
+  if (!q) return text;
+  return text.replace(new RegExp(`(${q})`, 'gi'), '<strong style="color:var(--green-deep)">$1</strong>');
+}
+
+function closeAll() {
+  document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+}
+
+function setupInput(inputId, ddId) {
+  const inp = document.getElementById(inputId), dd = document.getElementById(ddId);
+  inp.addEventListener('focus', () => { buildDropdown(dd, inp.value, inputId); dd.classList.add('open'); });
+  inp.addEventListener('input', () => { buildDropdown(dd, inp.value, inputId); dd.classList.add('open'); });
+  inp.addEventListener('keydown', e => { if (e.key==='Escape') closeAll(); });
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.location-group') && !e.target.closest('.confirm-bar')) closeAll();
+});
+
+setupInput('fromInput','fromDropdown');
+setupInput('toInput','toDropdown');
+
+// ── GO RIDE ──
+function goRide() {
+  const from = document.getElementById('fromInput').value.trim();
+  const to = document.getElementById('toInput').value.trim();
+  if (!from || !to) { alert('Please select both pickup and drop locations.'); return; }
+  if (from === to) { alert('Pickup and drop cannot be the same!'); return; }
+
+  const btn = document.querySelector('.go-btn'), lbl = document.getElementById('btnLabel');
+  btn.style.opacity = '0.8'; lbl.textContent = 'Searching…';
+  setTimeout(() => {
+    lbl.textContent = '✓ Rides found!';
+    setTimeout(() => {
+      lbl.textContent = mode==='now' ? 'Find a Ride Now' : 'Schedule Ride';
+      btn.style.opacity = '1';
+    }, 2000);
+  }, 1100);
+}
+</script>
+</body>
+</html>
