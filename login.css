@@ -1,0 +1,19 @@
+/* ─── RYDR login.css ─────────────────────────────────────────────────────── */
+body { display: flex; height: 100vh; }
+
+.left { width: 42%; padding: 2rem 2.4rem; }
+
+.logo { margin-bottom: 2rem; }
+
+.hero { z-index: 1; flex: 1; display: flex; flex-direction: column; justify-content: center; padding-bottom: 1.5rem; }
+.hero h1 { font-size: clamp(2rem,3.2vw,3rem); font-weight: 900; color: white; line-height: 1.12; margin-bottom: 1rem; }
+.hero p  { font-size: 0.93rem; color: rgba(255,255,255,0.78); line-height: 1.65; max-width: 320px; margin-bottom: 2rem; }
+
+.stats { margin-bottom: 1.8rem; }
+
+/* ── LOGIN FORM ── */
+.login-title { font-size: 1.75rem; font-weight: 900; color: var(--dark); margin-bottom: 0.25rem; }
+.login-sub   { font-size: 0.85rem; color: #7a9485; margin-bottom: 1.6rem; }
+
+#panel-select h2 { font-size: 1.75rem; font-weight: 900; color: var(--dark); margin-bottom: 0.3rem; }
+.subtitle        { font-size: 0.88rem; color: #7a9485; margin-bottom: 1.8rem; }

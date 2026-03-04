@@ -1,0 +1,134 @@
+/* ─── RYDR booking.css ───────────────────────────────────────────────────── */
+body { display: flex; height: 100vh; }
+
+.left { width: 38%; padding: 1.5rem 2rem 1.8rem; }
+.logo { margin-bottom: 1.5rem; }
+
+/* ── BOOKING PANEL ── */
+.booking-heading { font-size: 1rem; font-weight: 700; color: white; margin-bottom: 1.1rem; opacity: 0.95; }
+
+/* TOGGLE */
+.toggle-row { display: flex; background: rgba(0,0,0,0.15); border-radius: 10px; padding: 3px; margin-bottom: 1.2rem; }
+.toggle-btn {
+  flex: 1; padding: 0.52rem 0.4rem; border: none; border-radius: 8px;
+  background: transparent; font-family: 'Inter',sans-serif; font-size: 0.8rem; font-weight: 500;
+  color: rgba(255,255,255,0.7); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 0.3rem; transition: all 0.2s;
+}
+.toggle-btn.active { background: white; color: var(--green-deep); font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+
+/* ROUTE */
+.route-container { position: relative; margin-bottom: 1.1rem; }
+.route-line {
+  position: absolute; left: 15px; top: 46px; bottom: 46px; width: 2px;
+  background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.6) 0, rgba(255,255,255,0.6) 5px, transparent 5px, transparent 10px);
+}
+.location-group  { position: relative; z-index: 1; margin-bottom: 0.6rem; }
+.location-label  { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.65); margin-bottom: 0.25rem; margin-left: 2.2rem; }
+.location-input-wrap { display: flex; align-items: center; gap: 0.55rem; }
+.loc-dot { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; }
+.dot-from { background: white; color: var(--green-deep); }
+.dot-to   { background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.7); color: white; }
+
+.location-input {
+  flex: 1; padding: 0.68rem 0.85rem; border: 1.5px solid rgba(255,255,255,0.25); border-radius: 9px;
+  font-family: 'Inter',sans-serif; font-size: 0.85rem; font-weight: 500; color: white;
+  background: rgba(255,255,255,0.15); outline: none; transition: border-color 0.18s, background 0.18s;
+}
+.location-input::placeholder  { color: rgba(255,255,255,0.45); }
+.location-input:focus,
+.location-input.confirmed     { border-color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.22); }
+
+/* DROPDOWN */
+.dropdown {
+  position: absolute; top: calc(100% + 4px); left: 37px; right: 0;
+  background: white; border: 1.5px solid var(--border); border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.16); max-height: 210px; overflow-y: auto; z-index: 9999; display: none;
+}
+.dropdown.open { display: block; animation: dropIn 0.12s ease; }
+@keyframes dropIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+.dropdown::-webkit-scrollbar { width: 3px; }
+.dropdown::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.dd-item {
+  display: flex; align-items: center; gap: 0.55rem; padding: 0.6rem 0.85rem;
+  cursor: pointer; font-size: 0.84rem; color: var(--dark); border-bottom: 1px solid #f0f7f3; transition: background 0.1s;
+}
+.dd-item:last-child   { border-bottom: none; }
+.dd-item:hover        { background: #edfaf3; color: var(--green-deep); }
+.dd-item.use-location { color: var(--green-deep); font-weight: 600; background: #f2fbf6; border-bottom: 1.5px solid var(--border); }
+.dd-item.use-location:hover { background: #e0f7ec; }
+.dd-district  { font-size: 0.67rem; color: var(--muted); margin-left: auto; flex-shrink: 0; }
+.dd-no-result { padding: 0.85rem; text-align: center; font-size: 0.8rem; color: var(--muted); }
+
+/* DATE/TIME */
+.datetime-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1.1rem;
+  overflow: hidden; max-height: 90px; opacity: 1; transition: max-height 0.3s ease, opacity 0.25s ease, margin 0.3s ease;
+}
+.datetime-row.hidden { max-height: 0; opacity: 0; margin-bottom: 0; }
+.field-group label {
+  display: block; font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: rgba(255,255,255,0.65); margin-bottom: 0.25rem;
+}
+.field-input {
+  width: 100%; padding: 0.65rem 0.8rem; border: 1.5px solid rgba(255,255,255,0.25); border-radius: 9px;
+  font-family: 'Inter',sans-serif; font-size: 0.83rem; color: white; background: rgba(255,255,255,0.15);
+  outline: none; color-scheme: dark; transition: border-color 0.18s;
+}
+.field-input:focus { border-color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.22); }
+
+/* GO BUTTON */
+.go-btn {
+  width: 100%; padding: 0.85rem; background: white; color: var(--green-deep);
+  border: none; border-radius: 10px; font-family: 'Inter',sans-serif; font-size: 0.92rem; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  transition: background 0.18s, transform 0.12s, box-shadow 0.18s;
+}
+.go-btn:hover  { background: #e8faf0; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+.go-btn:active { transform: translateY(0); }
+
+/* ── MAP PANEL ── */
+.right { flex: 1; position: relative; overflow: hidden; background: none; display: block; }
+#map   { width: 100%; height: 100%; }
+
+.map-placeholder {
+  position: absolute; inset: 0; background: #f0f4f2;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.8rem;
+  z-index: 10; transition: opacity 0.3s;
+}
+.map-placeholder.hide          { opacity: 0; pointer-events: none; }
+.map-placeholder-icon          { font-size: 3rem; opacity: 0.3; }
+.map-placeholder-text          { font-size: 0.9rem; color: #aaa; font-weight: 500; }
+
+/* CONFIRM BAR */
+.confirm-bar {
+  position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px);
+  background: white; border-radius: 14px; box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  padding: 0.9rem 1.4rem; display: flex; align-items: center; gap: 1rem;
+  z-index: 1000; min-width: 300px; max-width: 420px;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s;
+}
+.confirm-bar.visible { opacity: 1; pointer-events: all; transform: translateX(-50%) translateY(0); }
+.confirm-address-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.2rem; }
+.confirm-address-text  { font-size: 0.85rem; font-weight: 600; color: var(--dark); line-height: 1.3; }
+.confirm-btn {
+  background: var(--green); color: white; border: none; border-radius: 9px;
+  padding: 0.55rem 1.1rem; font-family: 'Inter',sans-serif; font-size: 0.83rem; font-weight: 700;
+  cursor: pointer; white-space: nowrap; transition: background 0.18s;
+}
+.confirm-btn:hover { background: var(--green-dark); }
+
+/* BADGES & HINTS */
+.map-hint {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.65); color: white; font-size: 0.78rem; font-weight: 500;
+  padding: 0.45rem 1rem; border-radius: 20px; z-index: 1000; pointer-events: none;
+  opacity: 0; transition: opacity 0.3s; white-space: nowrap;
+}
+.map-hint.show { opacity: 1; }
+.map-badge { position: absolute; top: 14px; right: 14px; z-index: 1000; border-radius: 10px; padding: 0.4rem 0.85rem; font-size: 0.75rem; font-weight: 700; display: none; }
+.map-badge.from { background: #e0f7ea; color: var(--green-deep); display: block; }
+.map-badge.to   { background: #fff4e0; color: #c07810; display: block; }
+
+.leaflet-control-attribution { font-size: 10px !important; }

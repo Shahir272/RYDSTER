@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RYDR</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <link rel="stylesheet" href="booking.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+</head>
+<body>
+
+<!-- ── LEFT BOOKING PANEL ── -->
+<div class="left">
+  <div class="logo">
+    <div class="logo-icon">🚗</div>
+    <span class="logo-text">RYDR</span>
+  </div>
+
+  <div class="booking-wrap">
+    <div class="booking-heading">Book a Ride</div>
+
+    <!-- Mode toggle -->
+    <div class="toggle-row">
+      <button class="toggle-btn active" id="btnNow"   onclick="setMode('now')">⚡ Book Now</button>
+      <button class="toggle-btn"        id="btnLater" onclick="setMode('later')">🕐 Schedule for Later</button>
+    </div>
+
+    <!-- Route -->
+    <div class="route-container">
+      <div class="route-line"></div>
+
+      <div class="location-group" id="fromGroup">
+        <div class="location-label">From</div>
+        <div class="location-input-wrap">
+          <div class="loc-dot dot-from">A</div>
+          <input type="text" id="fromInput" class="location-input" placeholder="Pickup location…" autocomplete="off"/>
+        </div>
+        <div class="dropdown" id="fromDropdown"></div>
+      </div>
+
+      <div class="location-group" id="toGroup">
+        <div class="location-label">To</div>
+        <div class="location-input-wrap">
+          <div class="loc-dot dot-to">B</div>
+          <input type="text" id="toInput" class="location-input" placeholder="Drop location…" autocomplete="off"/>
+        </div>
+        <div class="dropdown" id="toDropdown"></div>
+      </div>
+    </div>
+
+    <!-- Date/time (schedule mode only) -->
+    <div class="datetime-row hidden" id="datetimeRow">
+      <div class="field-group">
+        <label>Date</label>
+        <input type="date" class="field-input" id="dateInput"/>
+      </div>
+      <div class="field-group">
+        <label>Time</label>
+        <input type="time" class="field-input" id="timeInput"/>
+      </div>
+    </div>
+
+    <button class="go-btn" onclick="goRide()">
+      <span id="btnLabel">Find a Ride Now</span>
+      <span>→</span>
+    </button>
+  </div>
+</div>
+
+<!-- ── RIGHT MAP PANEL ── -->
+<div class="right">
+  <div id="map"></div>
+
+  <div class="map-placeholder" id="mapPlaceholder">
+    <div class="map-placeholder-icon">🗺️</div>
+    <div class="map-placeholder-text">Select a location to view the map</div>
+  </div>
+
+  <div class="map-badge" id="mapBadge"></div>
+  <div class="map-hint"  id="mapHint">Drag the pin to pinpoint your exact location</div>
+
+  <div class="confirm-bar" id="confirmBar">
+    <div class="confirm-address">
+      <div class="confirm-address-label" id="confirmForLabel">Confirming pickup</div>
+      <div class="confirm-address-text"  id="confirmAddressText">Fetching address…</div>
+    </div>
+    <button class="confirm-btn" onclick="confirmLocation()">✓ Confirm</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="places.js"></script>
+<script src="carousel.js"></script>
+<script src="booking.js"></script>
+</body>
+</html>
