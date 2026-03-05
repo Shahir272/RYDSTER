@@ -317,3 +317,111 @@ body { display: flex; height: 100vh; }
 .post-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 .leaflet-control-attribution { font-size: 10px !important; }
+/* ── DRIVER GREETING ── */
+.driver-greeting {
+  font-size: 0.85rem; color: rgba(255,255,255,0.9); font-weight: 500;
+  margin-bottom: 0.7rem; padding: 0.45rem 0.8rem;
+  background: rgba(255,255,255,0.15); border-radius: 9px;
+}
+.driver-greeting strong { color: white; font-weight: 800; }
+
+/* ── MY POSTED RIDES SECTION ── */
+.my-rides-section {
+  margin-top: 1rem;
+  border-top: 1.5px solid rgba(255,255,255,0.18);
+  padding-top: 0.9rem;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.my-rides-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.65rem;
+}
+.my-rides-title {
+  font-size: 0.78rem; font-weight: 700; color: white;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.my-rides-refresh {
+  background: rgba(255,255,255,0.18); border: none; color: white;
+  width: 26px; height: 26px; border-radius: 7px; cursor: pointer;
+  font-size: 1rem; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.my-rides-refresh:hover { background: rgba(255,255,255,0.3); }
+
+#myRidesList {
+  overflow-y: auto; flex: 1;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  padding-right: 2px;
+}
+#myRidesList::-webkit-scrollbar { width: 3px; }
+#myRidesList::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
+
+.my-rides-loading {
+  display: flex; align-items: center; justify-content: center; gap: 5px; padding: 1rem 0;
+}
+.my-rides-empty {
+  font-size: 0.8rem; color: rgba(255,255,255,0.65); text-align: center;
+  padding: 1rem 0.5rem; line-height: 1.5;
+}
+
+/* ── RIDE CARD ── */
+.ride-card {
+  background: rgba(255,255,255,0.13);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  padding: 0.65rem 0.85rem;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.ride-card:hover { background: rgba(255,255,255,0.19); }
+
+.ride-card-route { margin-bottom: 0.45rem; }
+.ride-card-from, .ride-card-to {
+  display: flex; align-items: center; gap: 0.45rem;
+}
+.rc-arrow {
+  font-size: 0.65rem; color: rgba(255,255,255,0.45);
+  margin-left: 0.35rem; line-height: 1;
+}
+.rc-dot {
+  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 800;
+}
+.rc-dot-a { background: white; color: var(--green-deep); }
+.rc-dot-b { background: rgba(255,255,255,0.2); border: 1.5px solid rgba(255,255,255,0.6); color: white; }
+.rc-place {
+  font-size: 0.8rem; font-weight: 600; color: white;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;
+}
+
+.ride-card-meta {
+  display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.45rem;
+}
+.rc-meta-item {
+  font-size: 0.7rem; color: rgba(255,255,255,0.75); font-weight: 500;
+}
+
+.ride-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ride-status-badge {
+  font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+.status-available { background: rgba(45,190,96,0.25); color: #a8f0c4; }
+.status-completed { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
+.status-other     { background: rgba(255,100,100,0.2);  color: #ffaaaa; }
+
+.rc-cancel-btn {
+  font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 7px; padding: 0.2rem 0.65rem; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.rc-cancel-btn:hover { background: rgba(230,80,80,0.35); color: white; border-color: transparent; }

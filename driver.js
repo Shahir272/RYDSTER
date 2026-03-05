@@ -433,6 +433,7 @@ async function handleAction() {
       document.getElementById('postBtnIcon').textContent  = '✅';
       document.getElementById('postBtnLabel').textContent = 'Posted!';
       showToast(`🎉 Ride posted! ₹${price}/seat · ${seats} seat${seats>1?'s':''} available.`);
+      loadMyRides(); // refresh the rides list
 
       // Reset button after 2s
       setTimeout(() => {
@@ -478,5 +479,104 @@ async function previewRoute() {
   }
 }
 
-// Init carousel
-document.addEventListener('DOMContentLoaded', () => initCarousel('carousel', 'dots'));
+// ── MY POSTED RIDES ──────────────────────────────────────────────────────────
+
+async function loadMyRides() {
+  const list = document.getElementById('myRidesList');
+  const user = rydrGetCurrentUser();
+  if (!user) return;
+
+  // Show loading state
+  list.innerHTML = `<div class="my-rides-loading">
+    <div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div>
+  </div>`;
+
+  try {
+    const rides = await sbFetch(
+      `/RIDE?driver_id=eq.${user.user_id}&order=ride_id.desc&select=*`
+    );
+
+    if (!rides || rides.length === 0) {
+      list.innerHTML = '<div class="my-rides-empty">No rides posted yet. Post your first ride above! 🚗</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    rides.forEach(ride => {
+      const statusClass = ride.ride_status === 'available' ? 'status-available'
+                        : ride.ride_status === 'completed'  ? 'status-completed'
+                        : 'status-other';
+      const statusLabel = ride.ride_status === 'available' ? '🟢 Available'
+                        : ride.ride_status === 'completed'  ? '✅ Completed'
+                        : `⚪ ${ride.ride_status}`;
+      const time = ride.ride_time ? ride.ride_time.slice(0,5) : '—';
+      const price = ride.total_cost
+        ? `₹${ride.total_cost}`
+        : '—';
+
+      list.insertAdjacentHTML('beforeend', `
+        <div class="ride-card" data-id="${ride.ride_id}">
+          <div class="ride-card-route">
+            <div class="ride-card-from">
+              <span class="rc-dot rc-dot-a">A</span>
+              <span class="rc-place">${ride.source || '—'}</span>
+            </div>
+            <div class="rc-arrow">↓</div>
+            <div class="ride-card-to">
+              <span class="rc-dot rc-dot-b">B</span>
+              <span class="rc-place">${ride.destination || '—'}</span>
+            </div>
+          </div>
+          <div class="ride-card-meta">
+            <span class="rc-meta-item">🕐 ${time}</span>
+            <span class="rc-meta-item">💺 ${ride.available_seats} seat${ride.available_seats !== 1 ? 's' : ''}</span>
+            <span class="rc-meta-item">💰 ${price}</span>
+          </div>
+          <div class="ride-card-footer">
+            <span class="ride-status-badge ${statusClass}">${statusLabel}</span>
+            ${ride.ride_status === 'available'
+              ? `<button class="rc-cancel-btn" onclick="cancelRide(${ride.ride_id}, this)">Cancel</button>`
+              : ''}
+          </div>
+        </div>
+      `);
+    });
+
+  } catch (err) {
+    list.innerHTML = `<div class="my-rides-empty" style="color:#e05252;">Failed to load rides: ${err.message}</div>`;
+  }
+}
+
+async function cancelRide(rideId, btn) {
+  if (!confirm('Cancel this ride?')) return;
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    await sbFetch(`/RIDE?ride_id=eq.${rideId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ride_status: 'cancelled' }),
+    });
+    loadMyRides(); // refresh list
+  } catch (err) {
+    alert('Failed to cancel: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Cancel';
+  }
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  // Show driver name
+  const user = rydrGetCurrentUser();
+  if (user && user.name) {
+    const stats = document.querySelector('.driver-stats');
+    if (stats) {
+      const greeting = document.createElement('div');
+      greeting.className = 'driver-greeting';
+      greeting.innerHTML = `👋 Hello, <strong>${user.name.split(' ')[0]}</strong>`;
+      stats.insertAdjacentElement('beforebegin', greeting);
+    }
+  }
+  // Load their posted rides
+  loadMyRides();
+});
