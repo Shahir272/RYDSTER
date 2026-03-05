@@ -393,46 +393,32 @@ function isAfter4Hours(timeStr) {
 
 // ── Clear driver route highlight ──
 // ── Resolve any place name or full address string → {lat, lng} ──────────────
-// Handles: "Mayyanad", "Mayyanad, Kottiyam, Kollam", "Service Road, Kallumthazham, K..."
 const _coordsCache = {};
 async function _resolveCoords(raw) {
   if (!raw) return null;
   const key = raw.toLowerCase().trim();
   if (_coordsCache[key]) return _coordsCache[key];
-
-  // Strategy 1 — try each comma-separated token against PLACES (most→least specific)
+  // Try each comma-separated token against PLACES first (no network)
   const tokens = raw.split(',').map(s => s.trim()).filter(Boolean);
   for (const token of tokens) {
-    // exact
     const exact = PLACES.find(p => p.name.toLowerCase() === token.toLowerCase());
     if (exact) { _coordsCache[key] = exact; return exact; }
-    // fuzzy via existing placesMatch
     const fuzzy = PLACES.find(p => placesMatch(p.name, token));
     if (fuzzy) { _coordsCache[key] = fuzzy; return fuzzy; }
   }
-
-  // Strategy 2 — Nominatim with the full raw string, biased to Kerala
+  // Nominatim fallback for full address strings
   const tryNominatim = async (q) => {
     try {
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&countrycodes=in`;
-      const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+      const res  = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&countrycodes=in`, { headers: { 'Accept-Language': 'en' } });
       const data = await res.json();
       if (data && data.length) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
     } catch {}
     return null;
   };
-
-  // Try: full string + Kerala, then just first token + Kerala, then full string alone
-  const attempts = [
-    raw + ', Kerala, India',
-    tokens[0] + ', Kerala, India',
-    raw,
-  ];
-  for (const attempt of attempts) {
-    const result = await tryNominatim(attempt);
-    if (result) { _coordsCache[key] = result; return result; }
+  for (const attempt of [raw + ', Kerala, India', tokens[0] + ', Kerala, India', raw]) {
+    const r = await tryNominatim(attempt);
+    if (r) { _coordsCache[key] = r; return r; }
   }
-
   return null;
 }
 
@@ -461,8 +447,7 @@ async function highlightDriverRoute(rideId, sourceName, destName) {
     c.classList.toggle('rr-card-active', c.dataset.rideId === String(rideId));
   });
 
-  // Look up coords — tries multiple strategies so full address strings like
-  // "Mayyanad, Kottiyam, Kollam" are resolved correctly
+  // Look up coords — PLACES first, then Nominatim for full address strings
   const srcPlace  = await _resolveCoords(sourceName);
   const destPlace = await _resolveCoords(destName);
   if (!srcPlace || !destPlace) return;
@@ -657,20 +642,62 @@ async function goRide() {
   goBtn.disabled  = true;
 
   try {
-    const allRides = await sbFetch('/RIDE?ride_status=eq.available&select=*');
-    let matched = (allRides || []).filter(r => {
-      const srcMatch  = placesMatch(r.source, fromVal);
-      const destMatch = placesMatch(r.destination, toVal);
-      if (srcMatch && destMatch) { r._sourceMatch = true; r._destMatch = true; return true; }
-      const fromDistrict = fromPlace ? fromPlace.district : null;
-      const toDistrict   = toPlace   ? toPlace.district   : null;
-      const nearSrc  = fromDistrict && r.source.toLowerCase().includes(fromDistrict.toLowerCase());
-      const nearDest = toDistrict   && r.destination.toLowerCase().includes(toDistrict.toLowerCase());
-      if ((srcMatch || nearSrc) && (destMatch || nearDest)) {
-        r._sourceMatch = srcMatch; r._destMatch = destMatch; return true;
-      }
-      return false;
-    });
+    // Extract all meaningful tokens from a full address string for matching
+  // e.g. "Seematti Roundabout, Nagampadam, Kottayam, Kottayam" → ["Seematti Roundabout","Nagampadam","Kottayam"]
+  function addressTokens(addr) {
+    return [...new Set(
+      addr.split(',').map(s => s.trim()).filter(s => s.length > 2)
+    )];
+  }
+
+  // Extract the best district for an address by looking up tokens in PLACES
+  function guessDistrict(addr) {
+    const tokens = addressTokens(addr);
+    for (const tok of tokens) {
+      const p = PLACES.find(pl => pl.name.toLowerCase() === tok.toLowerCase())
+             || PLACES.find(pl => placesMatch(pl.name, tok));
+      if (p) return p.district;
+    }
+    return tokens[tokens.length - 1] || null;
+  }
+
+  // Match a single ride endpoint (e.g. "Kottayam") against a full passenger address
+  function rideEndpointMatch(rideVal, passengerAddr) {
+    if (!rideVal || !passengerAddr) return false;
+    if (placesMatch(rideVal, passengerAddr)) return true;
+    const tokens = addressTokens(passengerAddr);
+    if (tokens.some(tok => placesMatch(rideVal, tok) || placesMatch(tok, rideVal))) return true;
+    // district-level: ride endpoint's district === passenger's district
+    const passengerDistrict = guessDistrict(passengerAddr);
+    const ridePlace = PLACES.find(p => p.name.toLowerCase() === rideVal.toLowerCase())
+                   || PLACES.find(p => placesMatch(p.name, rideVal));
+    if (passengerDistrict && ridePlace &&
+        ridePlace.district.toLowerCase() === passengerDistrict.toLowerCase()) return true;
+    return false;
+  }
+
+  const allRides = await sbFetch('/RIDE?ride_status=eq.available&select=*');
+  let matched = (allRides || []).filter(r => {
+    const srcMatch  = rideEndpointMatch(r.source, fromVal);
+    const destMatch = rideEndpointMatch(r.destination, toVal);
+
+    // Perfect match: both source and destination align
+    if (srcMatch && destMatch) { r._sourceMatch = true; r._destMatch = true; return true; }
+
+    // Nearby match: source is in the same area — show as "📍 Nearby route"
+    // This covers cases like passenger in Kottayam finding a Kottayam→Kumily ride
+    if (srcMatch) { r._sourceMatch = true; r._destMatch = false; return true; }
+
+    // Broader district-level fallback for source
+    const fromDistrict = fromPlace ? fromPlace.district : guessDistrict(fromVal);
+    const nearSrc = fromDistrict && (
+      r.source.toLowerCase().includes(fromDistrict.toLowerCase()) ||
+      rideEndpointMatch(r.source, fromDistrict)
+    );
+    if (nearSrc) { r._sourceMatch = false; r._destMatch = destMatch; return true; }
+
+    return false;
+  });
 
     if (mode === 'later') matched = matched.filter(r => isAfter4Hours(r.ride_time));
     matched.sort((a, b) => (a.ride_time || '').localeCompare(b.ride_time || ''));
