@@ -6,19 +6,37 @@ const confirmed = { from: null, to: null };
 let routeLayer  = null;
 let routeShown  = false;
 
-// ── DATE DEFAULTS ──
-const nowD = new Date();
-document.getElementById('dateInput').valueAsDate = nowD;
-document.getElementById('timeInput').value =
-  `${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`;
+// ── DATE DEFAULTS (set lazily when accordion opens) ──
+function setDateDefaults() {
+  const dateEl = document.getElementById('dateInput');
+  const timeEl = document.getElementById('timeInput');
+  if (dateEl && !dateEl.value) {
+    const nowD = new Date();
+    dateEl.valueAsDate = nowD;
+    timeEl.value = `${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`;
+  }
+}
 
 // ── MODE TOGGLE ──
 function setMode(m) {
+  const accordion = document.getElementById('bookingAccordion');
+  const wasActive = document.getElementById(m === 'now' ? 'btnNow' : 'btnLater').classList.contains('active');
+
+  // If clicking the already-active button, collapse
+  if (wasActive && accordion.classList.contains('open')) {
+    accordion.classList.remove('open');
+    document.getElementById('btnNow').classList.remove('active');
+    document.getElementById('btnLater').classList.remove('active');
+    return;
+  }
+
   mode = m;
   document.getElementById('btnNow').classList.toggle('active', m === 'now');
   document.getElementById('btnLater').classList.toggle('active', m === 'later');
   document.getElementById('datetimeRow').classList.toggle('hidden', m === 'now');
   document.getElementById('btnLabel').textContent = m === 'now' ? 'Find a Ride Now' : 'Schedule Ride';
+  accordion.classList.add('open');
+  if (m === 'later') setDateDefaults();
 }
 
 // ── MAP INIT ──

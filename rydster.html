@@ -21,51 +21,56 @@
     <div class="welcome-msg" id="welcomeMsg"></div>
     <div class="booking-heading">Book a Ride</div>
 
-    <!-- Mode toggle -->
+    <!-- Mode toggle — clicking opens the accordion -->
     <div class="toggle-row">
-      <button class="toggle-btn active" id="btnNow"   onclick="setMode('now')">⚡ Book Now</button>
-      <button class="toggle-btn"        id="btnLater" onclick="setMode('later')">🕐 Schedule for Later</button>
+      <button class="toggle-btn" id="btnNow"   onclick="setMode('now')">⚡ Book Now</button>
+      <button class="toggle-btn" id="btnLater" onclick="setMode('later')">🕐 Schedule for Later</button>
     </div>
 
-    <!-- Route -->
-    <div class="route-container">
-      <div class="route-line"></div>
+    <!-- Accordion booking form — hidden until a mode is chosen -->
+    <div class="booking-accordion" id="bookingAccordion">
 
-      <div class="location-group" id="fromGroup">
-        <div class="location-label">From</div>
-        <div class="location-input-wrap">
-          <div class="loc-dot dot-from">A</div>
-          <input type="text" id="fromInput" class="location-input" placeholder="Pickup location…" autocomplete="off"/>
+      <!-- Route -->
+      <div class="route-container">
+        <div class="route-line"></div>
+
+        <div class="location-group" id="fromGroup">
+          <div class="location-label">From</div>
+          <div class="location-input-wrap">
+            <div class="loc-dot dot-from">A</div>
+            <input type="text" id="fromInput" class="location-input" placeholder="Pickup location…" autocomplete="off"/>
+          </div>
+          <div class="dropdown" id="fromDropdown"></div>
         </div>
-        <div class="dropdown" id="fromDropdown"></div>
-      </div>
 
-      <div class="location-group" id="toGroup">
-        <div class="location-label">To</div>
-        <div class="location-input-wrap">
-          <div class="loc-dot dot-to">B</div>
-          <input type="text" id="toInput" class="location-input" placeholder="Drop location…" autocomplete="off"/>
+        <div class="location-group" id="toGroup">
+          <div class="location-label">To</div>
+          <div class="location-input-wrap">
+            <div class="loc-dot dot-to">B</div>
+            <input type="text" id="toInput" class="location-input" placeholder="Drop location…" autocomplete="off"/>
+          </div>
+          <div class="dropdown" id="toDropdown"></div>
         </div>
-        <div class="dropdown" id="toDropdown"></div>
       </div>
-    </div>
 
-    <!-- Date/time (schedule mode only) -->
-    <div class="datetime-row hidden" id="datetimeRow">
-      <div class="field-group">
-        <label>Date</label>
-        <input type="date" class="field-input" id="dateInput"/>
+      <!-- Date/time (schedule mode only) -->
+      <div class="datetime-row hidden" id="datetimeRow">
+        <div class="field-group">
+          <label>Date</label>
+          <input type="date" class="field-input" id="dateInput"/>
+        </div>
+        <div class="field-group">
+          <label>Time</label>
+          <input type="time" class="field-input" id="timeInput"/>
+        </div>
       </div>
-      <div class="field-group">
-        <label>Time</label>
-        <input type="time" class="field-input" id="timeInput"/>
-      </div>
-    </div>
 
-    <button class="go-btn" onclick="goRide()">
-      <span id="btnLabel">Find a Ride Now</span>
-      <span>→</span>
-    </button>
+      <button class="go-btn" onclick="goRide()">
+        <span id="btnLabel">Find a Ride Now</span>
+        <span>→</span>
+      </button>
+
+    </div><!-- /booking-accordion -->
   </div>
 </div>
 

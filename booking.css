@@ -8,7 +8,7 @@ body { display: flex; height: 100vh; }
 .booking-heading { font-size: 1rem; font-weight: 700; color: white; margin-bottom: 1.1rem; opacity: 0.95; }
 
 /* TOGGLE */
-.toggle-row { display: flex; background: rgba(0,0,0,0.15); border-radius: 10px; padding: 3px; margin-bottom: 1.2rem; }
+.toggle-row { display: flex; background: rgba(0,0,0,0.15); border-radius: 10px; padding: 3px; margin-bottom: 0; }
 .toggle-btn {
   flex: 1; padding: 0.52rem 0.4rem; border: none; border-radius: 8px;
   background: transparent; font-family: 'Inter',sans-serif; font-size: 0.8rem; font-weight: 500;
@@ -16,6 +16,20 @@ body { display: flex; height: 100vh; }
   display: flex; align-items: center; justify-content: center; gap: 0.3rem; transition: all 0.2s;
 }
 .toggle-btn.active { background: white; color: var(--green-deep); font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+
+/* ACCORDION */
+.booking-accordion {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease, margin-top 0.3s ease;
+}
+.booking-accordion.open {
+  max-height: 600px;
+  opacity: 1;
+  margin-top: 1.2rem;
+}
 
 /* ROUTE */
 .route-container { position: relative; margin-bottom: 1.1rem; }

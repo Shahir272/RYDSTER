@@ -14,15 +14,33 @@ const confirmed = { from: null, to: null };
 // Preference chips state
 const prefs = { ac: false, music: false, ladies: false, pets: false };
 
-// ── DATE DEFAULTS ──
-const nowD = new Date();
-nowD.setMinutes(nowD.getMinutes() + 30);  // default 30 min from now
-document.getElementById('dateInput').valueAsDate = nowD;
-document.getElementById('timeInput').value =
-  `${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`;
-
+// ── DATE DEFAULTS (lazy — called when accordion opens in post mode) ──
+function setDriverDateDefaults() {
+  const dateEl = document.getElementById('dateInput');
+  const timeEl = document.getElementById('timeInput');
+  if (dateEl && !dateEl.value) {
+    const nowD = new Date();
+    nowD.setMinutes(nowD.getMinutes() + 30);
+    dateEl.valueAsDate = nowD;
+    timeEl.value = `${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`;
+  }
+}
 // ── MODE SWITCH ──
 function setMode(m) {
+  const accordion = document.getElementById('driverAccordion');
+  const btnClicked = document.getElementById(m === 'post' ? 'btnPost' : 'btnNow');
+  const isAlreadyActive = btnClicked.classList.contains('active');
+
+  // Toggle: clicking active button collapses
+  if (isAlreadyActive && accordion.classList.contains('open')) {
+    accordion.classList.remove('open');
+    document.getElementById('btnPost').classList.remove('active');
+    document.getElementById('btnNow').classList.remove('active');
+    clearRoute();
+    closePassengerPanel();
+    return;
+  }
+
   driverMode = m;
   document.getElementById('btnPost').classList.toggle('active', m === 'post');
   document.getElementById('btnNow').classList.toggle('active',  m === 'now');
@@ -37,9 +55,13 @@ function setMode(m) {
   document.getElementById('postBtnIcon').textContent  =
     m === 'post' ? '🚀' : '🔍';
 
-  // Section head text
   document.getElementById('sectionHead').textContent =
     m === 'post' ? 'Your Route' : 'Your Current Route';
+
+  accordion.classList.add('open');
+
+  // Set date defaults lazily for post mode
+  if (m === 'post') setDriverDateDefaults();
 
   clearRoute();
   closePassengerPanel();

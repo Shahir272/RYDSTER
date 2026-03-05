@@ -30,84 +30,89 @@
 
   <!-- Mode Toggle -->
   <div class="mode-toggle">
-    <button class="mode-btn active" id="btnPost" onclick="setMode('post')">🗓️ Post a Ride</button>
-    <button class="mode-btn"        id="btnNow"  onclick="setMode('now')">⚡ Find Passengers Now</button>
+    <button class="mode-btn" id="btnPost" onclick="setMode('post')">🗓️ Post a Ride</button>
+    <button class="mode-btn" id="btnNow"  onclick="setMode('now')">⚡ Find Passengers Now</button>
   </div>
 
-  <!-- Section Heading -->
-  <div class="section-head" id="sectionHead">Your Route</div>
+  <!-- Accordion form — revealed when a mode button is clicked -->
+  <div class="driver-accordion" id="driverAccordion">
 
-  <!-- Route Inputs -->
-  <div class="route-container">
-    <div class="route-line"></div>
+    <!-- Section Heading -->
+    <div class="section-head" id="sectionHead">Your Route</div>
 
-    <div class="location-group">
-      <div class="location-label">From</div>
-      <div class="location-input-wrap">
-        <div class="loc-dot dot-from">A</div>
-        <input type="text" id="fromInput" class="location-input" placeholder="Starting point…" autocomplete="off"/>
+    <!-- Route Inputs -->
+    <div class="route-container">
+      <div class="route-line"></div>
+
+      <div class="location-group">
+        <div class="location-label">From</div>
+        <div class="location-input-wrap">
+          <div class="loc-dot dot-from">A</div>
+          <input type="text" id="fromInput" class="location-input" placeholder="Starting point…" autocomplete="off"/>
+        </div>
+        <div class="dropdown" id="fromDd"></div>
       </div>
-      <div class="dropdown" id="fromDd"></div>
-    </div>
 
-    <div class="location-group">
-      <div class="location-label">To</div>
-      <div class="location-input-wrap">
-        <div class="loc-dot dot-to">B</div>
-        <input type="text" id="toInput" class="location-input" placeholder="Destination…" autocomplete="off"/>
-      </div>
-      <div class="dropdown" id="toDd"></div>
-    </div>
-  </div>
-
-  <!-- Date & Time (Post mode only) -->
-  <div class="dt-row" id="dtRow">
-    <div class="dt-group">
-      <label>Date</label>
-      <input type="date" class="dt-input" id="dateInput"/>
-    </div>
-    <div class="dt-group">
-      <label>Departure Time</label>
-      <input type="time" class="dt-input" id="timeInput"/>
-    </div>
-  </div>
-
-  <!-- Seats & Price (Post mode only) -->
-  <div class="trip-details" id="tripDetails">
-    <div class="detail-group">
-      <label>Available Seats</label>
-      <div class="detail-input-wrap">
-        <span class="d-icon">💺</span>
-        <input type="number" class="detail-input" id="seatsInput" min="1" max="6" placeholder="e.g. 3"/>
+      <div class="location-group">
+        <div class="location-label">To</div>
+        <div class="location-input-wrap">
+          <div class="loc-dot dot-to">B</div>
+          <input type="text" id="toInput" class="location-input" placeholder="Destination…" autocomplete="off"/>
+        </div>
+        <div class="dropdown" id="toDd"></div>
       </div>
     </div>
-    <div class="detail-group">
-      <label>Price per Seat (₹)</label>
-      <div class="detail-input-wrap">
-        <span class="d-icon">₹</span>
-        <input type="number" class="detail-input" id="priceInput" min="0" placeholder="Auto"/>
+
+    <!-- Date & Time (Post mode only) -->
+    <div class="dt-row" id="dtRow">
+      <div class="dt-group">
+        <label>Date</label>
+        <input type="date" class="dt-input" id="dateInput"/>
+      </div>
+      <div class="dt-group">
+        <label>Departure Time</label>
+        <input type="time" class="dt-input" id="timeInput"/>
       </div>
     </div>
-  </div>
 
-  <!-- Preferences (Post mode only) -->
-  <div class="prefs-row" id="prefsRow">
-    <button class="pref-chip" onclick="togglePref('ac',this)">❄️ AC</button>
-    <button class="pref-chip" onclick="togglePref('music',this)">🎵 Music OK</button>
-    <button class="pref-chip" onclick="togglePref('ladies',this)">👩 Ladies Only</button>
-    <button class="pref-chip" onclick="togglePref('pets',this)">🐾 Pets OK</button>
-  </div>
+    <!-- Seats & Price (Post mode only) -->
+    <div class="trip-details" id="tripDetails">
+      <div class="detail-group">
+        <label>Available Seats</label>
+        <div class="detail-input-wrap">
+          <span class="d-icon">💺</span>
+          <input type="number" class="detail-input" id="seatsInput" min="1" max="6" placeholder="e.g. 3"/>
+        </div>
+      </div>
+      <div class="detail-group">
+        <label>Price per Seat (₹)</label>
+        <div class="detail-input-wrap">
+          <span class="d-icon">₹</span>
+          <input type="number" class="detail-input" id="priceInput" min="0" placeholder="Auto"/>
+        </div>
+      </div>
+    </div>
 
-  <!-- Action Buttons -->
-  <div class="action-row">
-    <button class="btn-post" onclick="handleAction()">
-      <span id="postBtnIcon">🚀</span>
-      <span id="postBtnLabel">Post Ride</span>
-    </button>
-    <button class="btn-preview" onclick="previewRoute()" title="Preview route on map">
-      🗺️ Preview
-    </button>
-  </div>
+    <!-- Preferences (Post mode only) -->
+    <div class="prefs-row" id="prefsRow">
+      <button class="pref-chip" onclick="togglePref('ac',this)">❄️ AC</button>
+      <button class="pref-chip" onclick="togglePref('music',this)">🎵 Music OK</button>
+      <button class="pref-chip" onclick="togglePref('ladies',this)">👩 Ladies Only</button>
+      <button class="pref-chip" onclick="togglePref('pets',this)">🐾 Pets OK</button>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-row">
+      <button class="btn-post" onclick="handleAction()">
+        <span id="postBtnIcon">🚀</span>
+        <span id="postBtnLabel">Post Ride</span>
+      </button>
+      <button class="btn-preview" onclick="previewRoute()" title="Preview route on map">
+        🗺️ Preview
+      </button>
+    </div>
+
+  </div><!-- /driver-accordion -->
 
 
   <!-- ── MY POSTED RIDES ── -->
