@@ -392,6 +392,50 @@ function isAfter4Hours(timeStr) {
 }
 
 // ── Clear driver route highlight ──
+// ── Resolve any place name or full address string → {lat, lng} ──────────────
+// Handles: "Mayyanad", "Mayyanad, Kottiyam, Kollam", "Service Road, Kallumthazham, K..."
+const _coordsCache = {};
+async function _resolveCoords(raw) {
+  if (!raw) return null;
+  const key = raw.toLowerCase().trim();
+  if (_coordsCache[key]) return _coordsCache[key];
+
+  // Strategy 1 — try each comma-separated token against PLACES (most→least specific)
+  const tokens = raw.split(',').map(s => s.trim()).filter(Boolean);
+  for (const token of tokens) {
+    // exact
+    const exact = PLACES.find(p => p.name.toLowerCase() === token.toLowerCase());
+    if (exact) { _coordsCache[key] = exact; return exact; }
+    // fuzzy via existing placesMatch
+    const fuzzy = PLACES.find(p => placesMatch(p.name, token));
+    if (fuzzy) { _coordsCache[key] = fuzzy; return fuzzy; }
+  }
+
+  // Strategy 2 — Nominatim with the full raw string, biased to Kerala
+  const tryNominatim = async (q) => {
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&countrycodes=in`;
+      const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+      const data = await res.json();
+      if (data && data.length) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    } catch {}
+    return null;
+  };
+
+  // Try: full string + Kerala, then just first token + Kerala, then full string alone
+  const attempts = [
+    raw + ', Kerala, India',
+    tokens[0] + ', Kerala, India',
+    raw,
+  ];
+  for (const attempt of attempts) {
+    const result = await tryNominatim(attempt);
+    if (result) { _coordsCache[key] = result; return result; }
+  }
+
+  return null;
+}
+
 function clearDriverRoute() {
   if (driverRouteLayer && map) {
     map.removeLayer(driverRouteLayer);
@@ -417,9 +461,10 @@ async function highlightDriverRoute(rideId, sourceName, destName) {
     c.classList.toggle('rr-card-active', c.dataset.rideId === String(rideId));
   });
 
-  // Look up coords from PLACES
-  const srcPlace  = PLACES.find(p => placesMatch(p.name, sourceName));
-  const destPlace = PLACES.find(p => placesMatch(p.name, destName));
+  // Look up coords — tries multiple strategies so full address strings like
+  // "Mayyanad, Kottiyam, Kollam" are resolved correctly
+  const srcPlace  = await _resolveCoords(sourceName);
+  const destPlace = await _resolveCoords(destName);
   if (!srcPlace || !destPlace) return;
 
   try {
