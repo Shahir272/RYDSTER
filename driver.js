@@ -272,7 +272,7 @@ function buildDropdown(dd, query, inputId) {
     className:'dd-item use-location',
     innerHTML:'<span>📍</span><span>Use my current location</span>',
   });
-  locEl.onclick = () => { useGPSLocation(field); closeAll(); };
+  locEl.onmousedown = (e) => { e.preventDefault(); useGPSLocation(field); closeAll(); };
   dd.appendChild(locEl);
 
   const q    = query.toLowerCase().trim();
@@ -285,7 +285,8 @@ function buildDropdown(dd, query, inputId) {
       className:'dd-item',
       innerHTML:`<span>🏙️</span><span>${hl(p.name,q)}</span><span class="dd-district">${p.district}</span>`,
     });
-    el.onclick = () => {
+    el.onmousedown = (e) => {
+      e.preventDefault();
       const inp = document.getElementById(inputId);
       inp.value = p.name; inp.classList.remove('confirmed');
       confirmed[field] = null; closeAll(); clearRoute();
@@ -295,14 +296,35 @@ function buildDropdown(dd, query, inputId) {
   });
 }
 
+function positionDropdown(inp, dd) {
+  const rect = inp.getBoundingClientRect();
+  dd.style.top    = (rect.bottom + 4) + 'px';
+  dd.style.left   = rect.left + 'px';
+  dd.style.width  = rect.width + 'px';
+}
+
+function openDropdown(inp, dd, inputId) {
+  // Move dropdown to body so it's never clipped by any ancestor
+  if (dd.parentElement !== document.body) {
+    document.body.appendChild(dd);
+  }
+  buildDropdown(dd, inp.value, inputId);
+  positionDropdown(inp, dd);
+  dd.classList.add('open');
+}
+
 function setupInput(inputId, ddId) {
   const inp = document.getElementById(inputId), dd = document.getElementById(ddId);
-  inp.addEventListener('focus', () => { buildDropdown(dd, inp.value, inputId); dd.classList.add('open'); });
-  inp.addEventListener('input', () => { buildDropdown(dd, inp.value, inputId); dd.classList.add('open'); });
+  inp.addEventListener('focus',  () => openDropdown(inp, dd, inputId));
+  inp.addEventListener('input',  () => openDropdown(inp, dd, inputId));
   inp.addEventListener('keydown', e => { if (e.key==='Escape') closeAll(); });
+  const left = document.querySelector('.left');
+  if (left) left.addEventListener('scroll', () => { if (dd.classList.contains('open')) positionDropdown(inp, dd); });
+  window.addEventListener('resize', () => { if (dd.classList.contains('open')) positionDropdown(inp, dd); });
 }
-document.addEventListener('click', e => {
-  if (!e.target.closest('.location-group') && !e.target.closest('.confirm-bar')) closeAll();
+
+document.addEventListener('mousedown', e => {
+  if (!e.target.closest('.location-group') && !e.target.closest('.dropdown')) closeAll();
 });
 setupInput('fromInput','fromDd');
 setupInput('toInput','toDd');
