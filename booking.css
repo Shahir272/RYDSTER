@@ -200,3 +200,19 @@ body { display: flex; height: 100vh; }
 }
 
 .leaflet-control-attribution { font-size: 10px !important; }
+/* ── WELCOME MESSAGE ── */
+.welcome-msg {
+  display: none;                        /* hidden until JS populates it */
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.9);
+  font-weight: 500;
+  margin-bottom: 0.9rem;
+  padding: 0.55rem 0.9rem;
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  letter-spacing: 0.01em;
+}
+.welcome-msg strong {
+  font-weight: 800;
+  color: white;
+}

@@ -254,7 +254,12 @@ function buildDropdown(dd, query, inputId) {
     className: 'dd-item use-location',
     innerHTML: '<span>📍</span><span>Use my current location</span>',
   });
-  locEl.onclick = () => { useGPSLocation(field); closeAll(); };
+  // Use mousedown so it fires before the input loses focus and dropdown closes
+  locEl.addEventListener('mousedown', e => {
+    e.preventDefault();   // prevent input blur
+    closeAll();
+    useGPSLocation(field);
+  });
   dd.appendChild(locEl);
 
   const q    = query.toLowerCase().trim();
@@ -267,25 +272,44 @@ function buildDropdown(dd, query, inputId) {
       className: 'dd-item',
       innerHTML: `<span>🏙️</span><span>${highlight(p.name, q)}</span><span class="dd-district">${p.district}</span>`,
     });
-    el.onclick = () => {
+    el.addEventListener('mousedown', e => {
+      e.preventDefault();   // prevent input blur before we read the value
       const inp = document.getElementById(inputId);
       inp.value = p.name; inp.classList.remove('confirmed');
       confirmed[field] = null;
       closeAll(); clearRoute();
       showMapForPlace(p, field);
-    };
+    });
     dd.appendChild(el);
   });
 }
 
 function setupInput(inputId, ddId) {
   const inp = document.getElementById(inputId), dd = document.getElementById(ddId);
-  inp.addEventListener('focus', () => { buildDropdown(dd, inp.value, inputId); dd.classList.add('open'); });
-  inp.addEventListener('input', () => { buildDropdown(dd, inp.value, inputId); dd.classList.add('open'); });
+
+  inp.addEventListener('focus', () => {
+    // Close the OTHER dropdown only, not this one
+    document.querySelectorAll('.dropdown').forEach(d => {
+      if (d !== dd) d.classList.remove('open');
+    });
+    buildDropdown(dd, inp.value, inputId);
+    dd.classList.add('open');
+  });
+
+  inp.addEventListener('input', () => {
+    document.querySelectorAll('.dropdown').forEach(d => {
+      if (d !== dd) d.classList.remove('open');
+    });
+    buildDropdown(dd, inp.value, inputId);
+    dd.classList.add('open');
+  });
+
   inp.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
 }
 
-document.addEventListener('click', e => {
+// Use mousedown on document so it fires before blur/focus swap,
+// but skip if the click is inside a dropdown item (let onclick handle it)
+document.addEventListener('mousedown', e => {
   if (!e.target.closest('.location-group') && !e.target.closest('.confirm-bar')) closeAll();
 });
 setupInput('fromInput', 'fromDropdown');
@@ -326,4 +350,17 @@ async function goRide() {
 }
 
 // ── INIT ──
-document.addEventListener('DOMContentLoaded', () => initCarousel('carousel', 'dots'));
+document.addEventListener('DOMContentLoaded', () => {
+  // Show logged-in user's name from sessionStorage
+  const user = rydrGetCurrentUser();
+  const welcomeEl = document.getElementById('welcomeMsg');
+  if (welcomeEl) {
+    if (user && user.name) {
+      const firstName = user.name.split(' ')[0];
+      welcomeEl.innerHTML = `👋 Welcome back, <strong>${firstName}</strong>`;
+      welcomeEl.style.display = 'block';
+    } else {
+      welcomeEl.style.display = 'none'; // hide the empty box if no session
+    }
+  }
+});

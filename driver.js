@@ -394,13 +394,59 @@ async function handleAction() {
   if (driverMode === 'now') {
     setTimeout(() => showPassengerPanel(), 600);
   } else {
-    // Validate schedule
+    // ── Validate schedule fields ──
     const date = document.getElementById('dateInput').value;
     const time = document.getElementById('timeInput').value;
     if (!date || !time) { alert('Please set a date and time for your ride.'); return; }
-    const seats = document.getElementById('seatsInput').value;
+    const seats = parseInt(document.getElementById('seatsInput').value);
     if (!seats || seats < 1) { alert('Please enter the number of available seats.'); return; }
-    setTimeout(() => showToast(`🎉 Ride posted! Looking for passengers on your route.`), 800);
+
+    // ── Get price (auto-calculate if blank) ──
+    const priceEl = document.getElementById('priceInput');
+    const km = (confirmed.from && confirmed.to)
+      ? haversine(confirmed.from.lat, confirmed.from.lng, confirmed.to.lat, confirmed.to.lng)
+      : 0;
+    const price = priceEl && priceEl.value ? parseFloat(priceEl.value) : Math.round(25 + km * 10);
+    const totalCost = Math.round(price * seats);
+
+    // ── Get driver from session ──
+    const user = rydrGetCurrentUser();
+    if (!user) { alert('Session expired. Please log in again.'); window.location.href = 'index.html'; return; }
+
+    // ── Disable button while saving ──
+    const btn = document.querySelector('.btn-post');
+    const origLabel = document.getElementById('postBtnLabel').textContent;
+    btn.disabled = true;
+    document.getElementById('postBtnIcon').textContent  = '⏳';
+    document.getElementById('postBtnLabel').textContent = 'Posting…';
+
+    try {
+      await rydrPostRide({
+        driver_id:       user.user_id,
+        source:          confirmed.from ? confirmed.from.address : from,
+        destination:     confirmed.to   ? confirmed.to.address   : to,
+        ride_time:       time + ':00',   // "HH:MM:SS"
+        available_seats: seats,
+        total_cost:      totalCost,
+      });
+
+      document.getElementById('postBtnIcon').textContent  = '✅';
+      document.getElementById('postBtnLabel').textContent = 'Posted!';
+      showToast(`🎉 Ride posted! ₹${price}/seat · ${seats} seat${seats>1?'s':''} available.`);
+
+      // Reset button after 2s
+      setTimeout(() => {
+        btn.disabled = false;
+        document.getElementById('postBtnIcon').textContent  = '🚀';
+        document.getElementById('postBtnLabel').textContent = origLabel;
+      }, 2000);
+
+    } catch (err) {
+      btn.disabled = false;
+      document.getElementById('postBtnIcon').textContent  = '🚀';
+      document.getElementById('postBtnLabel').textContent = origLabel;
+      alert('Failed to post ride: ' + (err.message || 'Unknown error'));
+    }
   }
 }
 

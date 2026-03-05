@@ -91,3 +91,39 @@ function rydrRequireAuth(allowedRoles) {
   }
   return user;
 }
+// ── RIDE ──────────────────────────────────────────────────────────────────────
+
+/**
+ * Post a new ride to the RIDE table.
+ * ride_status is always set to 'available' on creation.
+ *
+ * @param {object} ride
+ *   { driver_id, source, destination, ride_time, available_seats, total_cost }
+ * @returns {object} the created ride row
+ */
+async function rydrPostRide(ride) {
+  const payload = {
+    driver_id:       ride.driver_id,
+    source:          ride.source,
+    destination:     ride.destination,
+    ride_time:       ride.ride_time,          // "HH:MM:SS"
+    available_seats: ride.available_seats,
+    total_cost:      ride.total_cost,
+    ride_status:     'available',
+  };
+  const rows = await sbFetch('/RIDE', {
+    method: 'POST',
+    headers: { 'Prefer': 'return=representation' },
+    body: JSON.stringify(payload),
+  });
+  return Array.isArray(rows) ? rows[0] : rows;
+}
+
+/**
+ * Fetch all available rides (optionally filter by destination).
+ */
+async function rydrGetAvailableRides(destination = null) {
+  let path = '/RIDE?ride_status=eq.available&select=*';
+  if (destination) path += `&destination=ilike.${encodeURIComponent('%' + destination + '%')}`;
+  return sbFetch(path);
+}
