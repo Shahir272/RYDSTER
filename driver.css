@@ -258,8 +258,8 @@ body { display: flex; height: 100vh; }
 .detail-input::placeholder { color: rgba(230,245,232,0.22); }
 .detail-input:focus { border-color: var(--green); background: #1a2e1d; }
 .detail-input[type=number]::-webkit-outer-spin-button,
-.detail-input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
-.detail-input[type=number] { -moz-appearance: textfield; }
+.detail-input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; }
+.detail-input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
 /* ════════ PREFS ════════ */
 .prefs-row {

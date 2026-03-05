@@ -302,33 +302,36 @@ function buildDropdown(dd, query, inputId) {
   });
 }
 
-function setupInput(inputId, ddId) {
-  const inp = document.getElementById(inputId), dd = document.getElementById(ddId);
-
-  inp.addEventListener('focus', () => {
-    // Close the OTHER dropdown only, not this one
-    document.querySelectorAll('.dropdown').forEach(d => {
-      if (d !== dd) d.classList.remove('open');
-    });
-    buildDropdown(dd, inp.value, inputId);
-    dd.classList.add('open');
-  });
-
-  inp.addEventListener('input', () => {
-    document.querySelectorAll('.dropdown').forEach(d => {
-      if (d !== dd) d.classList.remove('open');
-    });
-    buildDropdown(dd, inp.value, inputId);
-    dd.classList.add('open');
-  });
-
-  inp.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+function positionDropdown(inp, dd) {
+  const rect = inp.getBoundingClientRect();
+  dd.style.top   = (rect.bottom + 4) + 'px';
+  dd.style.left  = rect.left + 'px';
+  dd.style.width = rect.width + 'px';
 }
 
-// Use mousedown on document so it fires before blur/focus swap,
-// but skip if the click is inside a dropdown item (let onclick handle it)
+function openDropdown(inp, dd, inputId) {
+  // Move dropdown to body so it is never clipped by any ancestor overflow
+  if (dd.parentElement !== document.body) {
+    document.body.appendChild(dd);
+  }
+  buildDropdown(dd, inp.value, inputId);
+  positionDropdown(inp, dd);
+  dd.classList.add('open');
+}
+
+function setupInput(inputId, ddId) {
+  const inp = document.getElementById(inputId), dd = document.getElementById(ddId);
+  inp.addEventListener('focus',  () => openDropdown(inp, dd, inputId));
+  inp.addEventListener('input',  () => openDropdown(inp, dd, inputId));
+  inp.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+  // Reposition on scroll and resize
+  const left = document.querySelector('.left');
+  if (left) left.addEventListener('scroll', () => { if (dd.classList.contains('open')) positionDropdown(inp, dd); });
+  window.addEventListener('resize', () => { if (dd.classList.contains('open')) positionDropdown(inp, dd); });
+}
+
 document.addEventListener('mousedown', e => {
-  if (!e.target.closest('.location-group') && !e.target.closest('.confirm-bar')) closeAll();
+  if (!e.target.closest('.location-group') && !e.target.closest('.dropdown')) closeAll();
 });
 setupInput('fromInput', 'fromDropdown');
 setupInput('toInput',   'toDropdown');
