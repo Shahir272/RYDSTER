@@ -255,144 +255,82 @@ body { display: flex; height: 100vh; }
    ── RIDE RESULTS PANEL ──
 ══════════════════════════════════════════════════════ */
 .rr-panel {
-  position: absolute;
-  top: 16px; right: 16px;
-  width: 310px;
-  max-height: calc(100% - 32px);
-  background: white;
-  border-radius: 18px;
+  position: absolute; top: 16px; right: 16px;
+  width: 310px; max-height: calc(100% - 32px);
+  background: white; border-radius: 18px;
   box-shadow: 0 10px 48px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
-  z-index: 1002;
-  display: flex; flex-direction: column;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateX(16px);
-  transition: opacity 0.28s ease, transform 0.28s ease;
-  pointer-events: none;
+  z-index: 1002; display: flex; flex-direction: column;
+  overflow: hidden; opacity: 0; transform: translateX(16px);
+  transition: opacity 0.28s ease, transform 0.28s ease; pointer-events: none;
 }
-.rr-panel.rr-visible {
-  opacity: 1; transform: translateX(0);
-  pointer-events: all;
-}
+.rr-panel.rr-visible { opacity: 1; transform: translateX(0); pointer-events: all; }
 
-/* ── Header ── */
-.rr-header {
-  padding: 0.9rem 1rem 0.7rem;
-  border-bottom: 1px solid #edf5ef;
-  flex-shrink: 0;
-  background: white;
-}
-.rr-header-top {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 0.55rem;
-}
-.rr-title {
-  font-size: 0.9rem; font-weight: 800; color: var(--dark);
-}
+.rr-header { padding: 0.9rem 1rem 0.7rem; border-bottom: 1px solid #edf5ef; flex-shrink: 0; }
+.rr-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.55rem; }
+.rr-title { font-size: 0.9rem; font-weight: 800; color: var(--dark); }
 .rr-close {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: #f0f7f3; border: none; cursor: pointer;
-  font-size: 0.8rem; color: var(--muted); flex-shrink: 0;
+  width: 26px; height: 26px; border-radius: 50%; background: #f0f7f3;
+  border: none; cursor: pointer; font-size: 0.8rem; color: var(--muted);
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s;
 }
-.rr-close:hover { background: #e0ede8; color: var(--dark); }
+.rr-close:hover { background: #e0ede8; }
 
-/* Route pill row */
 .rr-route-pill {
   display: flex; align-items: center; flex-wrap: wrap; gap: 0.3rem;
-  background: #f6faf7; border-radius: 9px;
-  padding: 0.45rem 0.7rem; font-size: 0.74rem;
+  background: #f6faf7; border-radius: 9px; padding: 0.45rem 0.7rem; font-size: 0.74rem;
 }
-.rr-pill-from, .rr-pill-to {
-  font-weight: 700; color: var(--dark);
-  white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; max-width: 90px;
-}
+.rr-pill-from, .rr-pill-to { font-weight: 700; color: var(--dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
 .rr-pill-arrow { color: var(--muted); font-size: 0.8rem; flex-shrink: 0; }
-.rr-mode-badge {
-  margin-left: auto; font-size: 0.67rem; font-weight: 700;
-  padding: 0.18rem 0.55rem; border-radius: 20px; white-space: nowrap;
-}
+.rr-mode-badge { margin-left: auto; font-size: 0.67rem; font-weight: 700; padding: 0.18rem 0.55rem; border-radius: 20px; white-space: nowrap; }
 .rr-mode-now   { background: #dcfce7; color: #166534; }
 .rr-mode-later { background: #fef9c3; color: #854d0e; }
 
-/* ── Scrollable list ── */
-.rr-list {
-  overflow-y: auto; flex: 1;
-  padding: 0.65rem 0.75rem;
-  display: flex; flex-direction: column; gap: 0.6rem;
-}
+.rr-list { overflow-y: auto; flex: 1; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; gap: 0.6rem; }
 .rr-list::-webkit-scrollbar { width: 3px; }
 .rr-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-/* ── Ride card ── */
+/* Ride card — default */
 .rr-card {
-  border: 1.5px solid #e8f4ed;
-  border-radius: 13px; padding: 0.75rem 0.85rem;
-  background: white;
-  transition: border-color 0.18s, box-shadow 0.18s;
-  position: relative;
+  border: 1.5px solid #e8f4ed; border-radius: 13px; padding: 0.75rem 0.85rem;
+  background: white; transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
 }
-.rr-card:hover {
-  border-color: var(--green);
-  box-shadow: 0 3px 14px rgba(45,190,96,0.12);
-}
+.rr-card:hover { border-color: var(--green); box-shadow: 0 3px 14px rgba(45,190,96,0.1); }
 
-/* Route stops */
-.rr-card-route { margin-bottom: 0.55rem; }
-.rr-card-stop  { display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.15rem; }
-.rr-route-arrow { font-size: 0.6rem; color: var(--muted); margin-left: 0.85rem; line-height: 1.3; }
-.rr-dot {
-  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.57rem; font-weight: 800;
+/* Active (driver route highlighted red on map) */
+.rr-card.rr-card-active {
+  border-color: #e53e3e !important;
+  background: #fff5f5;
+  box-shadow: 0 3px 16px rgba(229,62,62,0.15) !important;
 }
+.rr-card.rr-card-active .rr-book-btn { background: #e53e3e; }
+.rr-card.rr-card-active .rr-book-btn:hover { background: #c53030; }
+
+.rr-card-route { margin-bottom: 0.55rem; }
+.rr-card-stop { display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.15rem; }
+.rr-route-arrow { font-size: 0.6rem; color: var(--muted); margin-left: 0.85rem; line-height: 1.3; }
+.rr-dot { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.57rem; font-weight: 800; }
 .rr-dot-a { background: var(--green); color: white; }
 .rr-dot-b { background: #fff4e0; color: #b87314; border: 1.5px solid #f5d07a; }
-.rr-stop-name {
-  font-size: 0.8rem; font-weight: 600; color: var(--dark);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;
-}
+.rr-stop-name { font-size: 0.8rem; font-weight: 600; color: var(--dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
 
-/* Nearby badge */
-.rr-nearby-badge {
-  font-size: 0.65rem; color: #7a5c00; font-weight: 600;
-  background: #fffbeb; border: 1px solid #f5d07a;
-  border-radius: 8px; padding: 0.15rem 0.5rem;
-  margin-top: 0.2rem; display: inline-block;
-}
+.rr-nearby-badge { font-size: 0.65rem; color: #7a5c00; font-weight: 600; background: #fffbeb; border: 1px solid #f5d07a; border-radius: 8px; padding: 0.15rem 0.5rem; margin-top: 0.2rem; display: inline-block; }
 
-/* Meta row */
-.rr-card-meta {
-  display: flex; align-items: center; gap: 0.5rem;
-  flex-wrap: wrap; margin-bottom: 0.6rem;
-}
-.rr-meta      { font-size: 0.73rem; color: var(--muted); font-weight: 500; }
-.rr-fare      { margin-left: auto; font-size: 0.88rem; font-weight: 800; color: var(--green-deep); }
+.rr-card-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+.rr-meta { font-size: 0.73rem; color: var(--muted); font-weight: 500; }
+.rr-fare { margin-left: auto; font-size: 0.88rem; font-weight: 800; color: var(--green-deep); }
 
-/* Book button */
 .rr-book-btn {
-  width: 100%; padding: 0.58rem;
-  background: var(--green); color: white;
-  border: none; border-radius: 9px;
-  font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 700;
-  cursor: pointer;
+  width: 100%; padding: 0.58rem; background: var(--green); color: white;
+  border: none; border-radius: 9px; font-family: 'Inter', sans-serif;
+  font-size: 0.82rem; font-weight: 700; cursor: pointer;
   transition: background 0.18s, transform 0.12s;
 }
-.rr-book-btn:hover  { background: var(--green-dark); transform: translateY(-1px); }
+.rr-book-btn:hover { background: var(--green-dark); transform: translateY(-1px); }
 .rr-book-btn:active { transform: translateY(0); }
-.rr-book-btn:disabled { background: #4caf74; cursor: default; transform: none; }
+.rr-book-btn:disabled { opacity: 0.7; cursor: default; transform: none; }
 
-/* ── Empty state ── */
-.rr-empty {
-  padding: 2rem 1.2rem;
-  text-align: center;
-  display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
-}
-.rr-empty-icon  { font-size: 2.4rem; opacity: 0.28; }
+.rr-empty { padding: 2rem 1.2rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
+.rr-empty-icon { font-size: 2.4rem; opacity: 0.28; }
 .rr-empty-title { font-size: 0.9rem; font-weight: 800; color: var(--dark); }
-.rr-empty-sub   {
-  font-size: 0.77rem; color: var(--muted);
-  line-height: 1.6; max-width: 230px;
-}
+.rr-empty-sub { font-size: 0.77rem; color: var(--muted); line-height: 1.6; max-width: 230px; }

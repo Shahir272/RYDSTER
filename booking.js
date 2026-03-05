@@ -354,17 +354,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 // ══════════════════════════════════════════════════════════════════
-// ── RIDE SEARCH & RESULTS ──
+// ── RIDE SEARCH, RESULTS & DRIVER ROUTE HIGHLIGHT ──
 // ══════════════════════════════════════════════════════════════════
 
-// ── Fuzzy place match: checks if two place name strings share a meaningful token ──
+// Track the driver route highlight layer separately so it can be toggled
+let driverRouteLayer = null;
+let activeHighlightRideId = null;
+let driverRouteShown = false;
+
+// ── Fuzzy place match ──
 function placesMatch(dbPlace, searchVal) {
   if (!dbPlace || !searchVal) return false;
-  const norm  = s => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+  const norm = s => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+  if (norm(dbPlace).includes(norm(searchVal)) || norm(searchVal).includes(norm(dbPlace))) return true;
   const dbTok = norm(dbPlace).split(/\s+/).filter(t => t.length > 2);
   const srTok = norm(searchVal).split(/\s+/).filter(t => t.length > 2);
-  // Direct substring fallback
-  if (norm(dbPlace).includes(norm(searchVal)) || norm(searchVal).includes(norm(dbPlace))) return true;
   return dbTok.some(t => srTok.includes(t));
 }
 
@@ -379,20 +383,114 @@ function formatRideTime(t) {
 // ── Is ride more than 4 hours from now? ──
 function isAfter4Hours(timeStr) {
   if (!timeStr) return false;
-  const now  = new Date();
+  const now = new Date();
   const [h, m] = timeStr.split(':').map(Number);
   const ride = new Date();
   ride.setHours(h, m, 0, 0);
-  // If ride time has already passed today, treat it as tomorrow
   if (ride <= now) ride.setDate(ride.getDate() + 1);
   return (ride - now) >= 4 * 3600 * 1000;
 }
 
-// ── Render the results panel ──
+// ── Clear driver route highlight ──
+function clearDriverRoute() {
+  if (driverRouteLayer && map) {
+    map.removeLayer(driverRouteLayer);
+    driverRouteLayer = null;
+  }
+  driverRouteShown    = false;
+  activeHighlightRideId = null;
+  // Remove active highlight from all cards
+  document.querySelectorAll('.rr-card.rr-card-active').forEach(c => c.classList.remove('rr-card-active'));
+}
+
+// ── Draw driver route as red line on map ──
+async function highlightDriverRoute(rideId, sourceName, destName) {
+  if (!map) return;
+
+  // If same card hovered again, do nothing; if different, clear old
+  if (activeHighlightRideId === rideId) return;
+  clearDriverRoute();
+  activeHighlightRideId = rideId;
+
+  // Highlight the card
+  document.querySelectorAll('.rr-card').forEach(c => {
+    c.classList.toggle('rr-card-active', c.dataset.rideId === String(rideId));
+  });
+
+  // Look up coords from PLACES
+  const srcPlace  = PLACES.find(p => placesMatch(p.name, sourceName));
+  const destPlace = PLACES.find(p => placesMatch(p.name, destName));
+  if (!srcPlace || !destPlace) return;
+
+  try {
+    const url  = `https://router.project-osrm.org/route/v1/driving/${srcPlace.lng},${srcPlace.lat};${destPlace.lng},${destPlace.lat}?overview=full&geometries=geojson`;
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    if (!data.routes || !data.routes.length) throw new Error('no route');
+    const coords = data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+
+    driverRouteLayer = L.layerGroup().addTo(map);
+
+    // Red glow underlay
+    L.polyline(coords, {
+      color: 'rgba(220,38,38,0.18)', weight: 14,
+      lineCap: 'round', lineJoin: 'round',
+    }).addTo(driverRouteLayer);
+
+    // Red animated dashed line
+    const redLine = L.polyline(coords, {
+      color: '#dc2626', weight: 4,
+      lineCap: 'round', lineJoin: 'round',
+      dashArray: '12 6',
+    }).addTo(driverRouteLayer);
+
+    // Add driver pins (A and B in red)
+    const makeRedPin = (label) => L.divIcon({
+      html: `<div style="width:28px;height:36px;background:#dc2626;border-radius:50% 50% 50% 0;
+               transform:rotate(-45deg);border:2.5px solid white;box-shadow:0 3px 10px rgba(220,38,38,0.5);"></div>
+             <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-38%);
+               color:white;font-weight:900;font-size:11px;font-family:Inter,sans-serif;">${label}</div>`,
+      className: '', iconSize: [28, 36], iconAnchor: [14, 36],
+    });
+    L.marker([srcPlace.lat, srcPlace.lng],  { icon: makeRedPin('A'), zIndexOffset: 500 }).addTo(driverRouteLayer);
+    L.marker([destPlace.lat, destPlace.lng], { icon: makeRedPin('B'), zIndexOffset: 500 }).addTo(driverRouteLayer);
+
+    driverRouteShown = true;
+    animateRedDash(redLine);
+
+    // Fit map to show both routes together
+    const allCoords = [...coords];
+    if (confirmed.from) allCoords.push([confirmed.from.lat, confirmed.from.lng]);
+    if (confirmed.to)   allCoords.push([confirmed.to.lat,   confirmed.to.lng]);
+    map.fitBounds(L.latLngBounds(allCoords), { padding: [60, 80] });
+
+  } catch {
+    // Straight-line fallback in red
+    if (!srcPlace || !destPlace) return;
+    driverRouteLayer = L.layerGroup().addTo(map);
+    L.polyline([[srcPlace.lat, srcPlace.lng],[destPlace.lat, destPlace.lng]], {
+      color: '#dc2626', weight: 3, dashArray: '8 5',
+    }).addTo(driverRouteLayer);
+    driverRouteShown = true;
+  }
+}
+
+function animateRedDash(polyline) {
+  let offset = 0;
+  const step = () => {
+    offset = (offset + 0.6) % 18;
+    try { polyline.setStyle({ dashOffset: String(-offset) }); } catch {}
+    if (driverRouteShown) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// ── Render results panel ──
 function showRideResults(rides, fromVal, toVal) {
-  // Remove any existing panel
   const existing = document.getElementById('rideResultsPanel');
   if (existing) existing.remove();
+  clearDriverRoute();
 
   const panel = document.createElement('div');
   panel.id        = 'rideResultsPanel';
@@ -405,9 +503,7 @@ function showRideResults(rides, fromVal, toVal) {
   const header = `
     <div class="rr-header">
       <div class="rr-header-top">
-        <div class="rr-title">
-          ${rides.length ? `${rides.length} Ride${rides.length > 1 ? 's' : ''} Found` : 'No Rides Found'}
-        </div>
+        <div class="rr-title">${rides.length ? `${rides.length} Ride${rides.length > 1 ? 's' : ''} Found` : 'No Rides Found'}</div>
         <button class="rr-close" onclick="closeRideResults()">✕</button>
       </div>
       <div class="rr-route-pill">
@@ -424,28 +520,25 @@ function showRideResults(rides, fromVal, toVal) {
       <div class="rr-empty">
         <div class="rr-empty-icon">🔍</div>
         <div class="rr-empty-title">No rides available</div>
-        <div class="rr-empty-sub">
-          ${mode === 'later'
-            ? 'No drivers have scheduled rides on this route more than 4 hours from now.'
-            : 'No drivers are currently offering rides on this route or nearby routes.'}
-        </div>
+        <div class="rr-empty-sub">${mode === 'later'
+          ? 'No drivers have scheduled rides on this route more than 4 hours from now.'
+          : 'No drivers are currently offering rides on this route or nearby routes.'}</div>
       </div>`;
   } else {
     const cards = rides.map(r => {
       const nearbyTag = (r._sourceMatch && r._destMatch) ? '' :
         '<span class="rr-nearby-badge">📍 Nearby route</span>';
+      // Escape quotes for inline JS
+      const srcEsc  = r.source.replace(/'/g, "\\'");
+      const destEsc = r.destination.replace(/'/g, "\\'");
       return `
-        <div class="rr-card">
+        <div class="rr-card" data-ride-id="${r.ride_id}"
+             onmouseenter="highlightDriverRoute(${r.ride_id}, '${srcEsc}', '${destEsc}')"
+             onmouseleave="clearDriverRoute()">
           <div class="rr-card-route">
-            <div class="rr-card-stop">
-              <span class="rr-dot rr-dot-a">A</span>
-              <span class="rr-stop-name">${r.source}</span>
-            </div>
+            <div class="rr-card-stop"><span class="rr-dot rr-dot-a">A</span><span class="rr-stop-name">${r.source}</span></div>
             <div class="rr-route-arrow">↓</div>
-            <div class="rr-card-stop">
-              <span class="rr-dot rr-dot-b">B</span>
-              <span class="rr-stop-name">${r.destination}</span>
-            </div>
+            <div class="rr-card-stop"><span class="rr-dot rr-dot-b">B</span><span class="rr-stop-name">${r.destination}</span></div>
             ${nearbyTag}
           </div>
           <div class="rr-card-meta">
@@ -453,9 +546,7 @@ function showRideResults(rides, fromVal, toVal) {
             <span class="rr-meta">💺 ${r.available_seats} seat${r.available_seats !== 1 ? 's' : ''}</span>
             <span class="rr-meta rr-fare">₹${r.total_cost}</span>
           </div>
-          <button class="rr-book-btn" onclick="bookRide(${r.ride_id}, '${r.source}', '${r.destination}')">
-            Book This Ride →
-          </button>
+          <button class="rr-book-btn" onclick="bookRide(${r.ride_id}, '${srcEsc}', '${destEsc}')">Book This Ride →</button>
         </div>`;
     }).join('');
     body = `<div class="rr-list">${cards}</div>`;
@@ -463,11 +554,11 @@ function showRideResults(rides, fromVal, toVal) {
 
   panel.innerHTML = header + body;
   document.querySelector('.right').appendChild(panel);
-  // Animate in after paint
   requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add('rr-visible')));
 }
 
 function closeRideResults() {
+  clearDriverRoute();
   const p = document.getElementById('rideResultsPanel');
   if (!p) return;
   p.classList.remove('rr-visible');
@@ -477,7 +568,6 @@ function closeRideResults() {
 async function bookRide(rideId, source, dest) {
   const user = rydrGetCurrentUser();
   if (!user) { alert('Please log in to book a ride.'); return; }
-  // TODO: insert into BOOKING table when schema is ready
   const btn = event.target;
   btn.textContent = '✓ Booked!';
   btn.style.background = '#157a3c';
@@ -489,17 +579,9 @@ async function bookRide(rideId, source, dest) {
 async function goRide() {
   const fromVal = document.getElementById('fromInput').value.trim();
   const toVal   = document.getElementById('toInput').value.trim();
+  if (!fromVal || !toVal) { alert('Please select both pickup and drop locations.'); return; }
+  if (fromVal === toVal)  { alert('Pickup and drop cannot be the same!'); return; }
 
-  if (!fromVal || !toVal) {
-    alert('Please select both pickup and drop locations.');
-    return;
-  }
-  if (fromVal === toVal) {
-    alert('Pickup and drop cannot be the same!');
-    return;
-  }
-
-  // Auto-confirm coords from PLACES if pin not yet placed
   const fromPlace = PLACES.find(p => p.name.toLowerCase() === fromVal.toLowerCase());
   const toPlace   = PLACES.find(p => p.name.toLowerCase() === toVal.toLowerCase());
   if (fromPlace && !confirmed.from) confirmed.from = { lat: fromPlace.lat, lng: fromPlace.lng, address: fromPlace.name };
@@ -510,7 +592,6 @@ async function goRide() {
     return;
   }
 
-  // Draw route on map
   if (!map) {
     document.getElementById('mapPlaceholder').classList.add('hide');
     initMap(confirmed.from.lat, confirmed.from.lng, 10);
@@ -524,9 +605,8 @@ async function goRide() {
   });
   setTimeout(() => drawRoute(), 200);
 
-  // ── Search DB ──
-  const goBtn = document.querySelector('.go-btn');
-  const lbl   = document.getElementById('btnLabel');
+  const lbl      = document.getElementById('btnLabel');
+  const goBtn    = document.querySelector('.go-btn');
   const origText = lbl.textContent;
   lbl.textContent = 'Searching…';
   goBtn.disabled  = true;
@@ -537,7 +617,6 @@ async function goRide() {
       const srcMatch  = placesMatch(r.source, fromVal);
       const destMatch = placesMatch(r.destination, toVal);
       if (srcMatch && destMatch) { r._sourceMatch = true; r._destMatch = true; return true; }
-      // Include nearby: one end matches and the other is in same district
       const fromDistrict = fromPlace ? fromPlace.district : null;
       const toDistrict   = toPlace   ? toPlace.district   : null;
       const nearSrc  = fromDistrict && r.source.toLowerCase().includes(fromDistrict.toLowerCase());
@@ -548,16 +627,9 @@ async function goRide() {
       return false;
     });
 
-    // "Schedule for Later" — only rides starting 4+ hours from now
-    if (mode === 'later') {
-      matched = matched.filter(r => isAfter4Hours(r.ride_time));
-    }
-
-    // Sort by time
+    if (mode === 'later') matched = matched.filter(r => isAfter4Hours(r.ride_time));
     matched.sort((a, b) => (a.ride_time || '').localeCompare(b.ride_time || ''));
-
     showRideResults(matched, fromVal, toVal);
-
   } catch (err) {
     console.error('Ride search error:', err);
     showRideResults([], fromVal, toVal);
