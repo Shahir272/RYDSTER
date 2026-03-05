@@ -336,39 +336,7 @@ document.addEventListener('mousedown', e => {
 setupInput('fromInput', 'fromDropdown');
 setupInput('toInput',   'toDropdown');
 
-// ── GO RIDE ──
-async function goRide() {
-  const fromVal = document.getElementById('fromInput').value.trim();
-  const toVal   = document.getElementById('toInput').value.trim();
-  if (!fromVal || !toVal) { alert('Please select both pickup and drop locations.'); return; }
-  if (fromVal === toVal)  { alert('Pickup and drop cannot be the same!'); return; }
-
-  if (confirmed.from && confirmed.to) { drawRoute(); return; }
-
-  // Auto-confirm from PLACES list if not already pin-confirmed
-  const fromPlace = PLACES.find(p => p.name.toLowerCase() === fromVal.toLowerCase());
-  const toPlace   = PLACES.find(p => p.name.toLowerCase() === toVal.toLowerCase());
-  if (fromPlace && !confirmed.from) confirmed.from = { lat: fromPlace.lat, lng: fromPlace.lng, address: fromPlace.name };
-  if (toPlace   && !confirmed.to)   confirmed.to   = { lat: toPlace.lat,   lng: toPlace.lng,   address: toPlace.name };
-
-  if (confirmed.from && confirmed.to) {
-    if (!map) {
-      document.getElementById('mapPlaceholder').classList.add('hide');
-      initMap(confirmed.from.lat, confirmed.from.lng, 10);
-      setTimeout(() => map && map.invalidateSize(), 100);
-    }
-    // Place both pins if missing
-    ['from','to'].forEach(f => {
-      if (!markers[f]) {
-        const c = confirmed[f];
-        markers[f] = L.marker([c.lat, c.lng], { icon: pinIcon(f) }).addTo(map);
-      }
-    });
-    setTimeout(() => drawRoute(), 200);
-  } else {
-    alert('Please confirm both locations on the map before searching.');
-  }
-}
+// ── GO RIDE — see DB-search version below ──
 
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
@@ -385,3 +353,216 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+// ══════════════════════════════════════════════════════════════════
+// ── RIDE SEARCH & RESULTS ──
+// ══════════════════════════════════════════════════════════════════
+
+// ── Fuzzy place match: checks if two place name strings share a meaningful token ──
+function placesMatch(dbPlace, searchVal) {
+  if (!dbPlace || !searchVal) return false;
+  const norm  = s => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+  const dbTok = norm(dbPlace).split(/\s+/).filter(t => t.length > 2);
+  const srTok = norm(searchVal).split(/\s+/).filter(t => t.length > 2);
+  // Direct substring fallback
+  if (norm(dbPlace).includes(norm(searchVal)) || norm(searchVal).includes(norm(dbPlace))) return true;
+  return dbTok.some(t => srTok.includes(t));
+}
+
+// ── Format "HH:MM:SS" → "9:30 AM" ──
+function formatRideTime(t) {
+  if (!t) return '—';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+// ── Is ride more than 4 hours from now? ──
+function isAfter4Hours(timeStr) {
+  if (!timeStr) return false;
+  const now  = new Date();
+  const [h, m] = timeStr.split(':').map(Number);
+  const ride = new Date();
+  ride.setHours(h, m, 0, 0);
+  // If ride time has already passed today, treat it as tomorrow
+  if (ride <= now) ride.setDate(ride.getDate() + 1);
+  return (ride - now) >= 4 * 3600 * 1000;
+}
+
+// ── Render the results panel ──
+function showRideResults(rides, fromVal, toVal) {
+  // Remove any existing panel
+  const existing = document.getElementById('rideResultsPanel');
+  if (existing) existing.remove();
+
+  const panel = document.createElement('div');
+  panel.id        = 'rideResultsPanel';
+  panel.className = 'rr-panel';
+
+  const modeLabel = mode === 'later'
+    ? '<span class="rr-mode-badge rr-mode-later">🕐 Scheduled (4h+)</span>'
+    : '<span class="rr-mode-badge rr-mode-now">⚡ Book Now</span>';
+
+  const header = `
+    <div class="rr-header">
+      <div class="rr-header-top">
+        <div class="rr-title">
+          ${rides.length ? `${rides.length} Ride${rides.length > 1 ? 's' : ''} Found` : 'No Rides Found'}
+        </div>
+        <button class="rr-close" onclick="closeRideResults()">✕</button>
+      </div>
+      <div class="rr-route-pill">
+        <span class="rr-pill-from">${fromVal}</span>
+        <span class="rr-pill-arrow">→</span>
+        <span class="rr-pill-to">${toVal}</span>
+        ${modeLabel}
+      </div>
+    </div>`;
+
+  let body;
+  if (!rides.length) {
+    body = `
+      <div class="rr-empty">
+        <div class="rr-empty-icon">🔍</div>
+        <div class="rr-empty-title">No rides available</div>
+        <div class="rr-empty-sub">
+          ${mode === 'later'
+            ? 'No drivers have scheduled rides on this route more than 4 hours from now.'
+            : 'No drivers are currently offering rides on this route or nearby routes.'}
+        </div>
+      </div>`;
+  } else {
+    const cards = rides.map(r => {
+      const nearbyTag = (r._sourceMatch && r._destMatch) ? '' :
+        '<span class="rr-nearby-badge">📍 Nearby route</span>';
+      return `
+        <div class="rr-card">
+          <div class="rr-card-route">
+            <div class="rr-card-stop">
+              <span class="rr-dot rr-dot-a">A</span>
+              <span class="rr-stop-name">${r.source}</span>
+            </div>
+            <div class="rr-route-arrow">↓</div>
+            <div class="rr-card-stop">
+              <span class="rr-dot rr-dot-b">B</span>
+              <span class="rr-stop-name">${r.destination}</span>
+            </div>
+            ${nearbyTag}
+          </div>
+          <div class="rr-card-meta">
+            <span class="rr-meta">🕐 ${formatRideTime(r.ride_time)}</span>
+            <span class="rr-meta">💺 ${r.available_seats} seat${r.available_seats !== 1 ? 's' : ''}</span>
+            <span class="rr-meta rr-fare">₹${r.total_cost}</span>
+          </div>
+          <button class="rr-book-btn" onclick="bookRide(${r.ride_id}, '${r.source}', '${r.destination}')">
+            Book This Ride →
+          </button>
+        </div>`;
+    }).join('');
+    body = `<div class="rr-list">${cards}</div>`;
+  }
+
+  panel.innerHTML = header + body;
+  document.querySelector('.right').appendChild(panel);
+  // Animate in after paint
+  requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add('rr-visible')));
+}
+
+function closeRideResults() {
+  const p = document.getElementById('rideResultsPanel');
+  if (!p) return;
+  p.classList.remove('rr-visible');
+  setTimeout(() => p.remove(), 280);
+}
+
+async function bookRide(rideId, source, dest) {
+  const user = rydrGetCurrentUser();
+  if (!user) { alert('Please log in to book a ride.'); return; }
+  // TODO: insert into BOOKING table when schema is ready
+  const btn = event.target;
+  btn.textContent = '✓ Booked!';
+  btn.style.background = '#157a3c';
+  btn.disabled = true;
+  setTimeout(() => { btn.textContent = 'Book This Ride →'; btn.style.background = ''; btn.disabled = false; }, 2500);
+}
+
+// ── OVERWRITE goRide with DB-search version ──
+async function goRide() {
+  const fromVal = document.getElementById('fromInput').value.trim();
+  const toVal   = document.getElementById('toInput').value.trim();
+
+  if (!fromVal || !toVal) {
+    alert('Please select both pickup and drop locations.');
+    return;
+  }
+  if (fromVal === toVal) {
+    alert('Pickup and drop cannot be the same!');
+    return;
+  }
+
+  // Auto-confirm coords from PLACES if pin not yet placed
+  const fromPlace = PLACES.find(p => p.name.toLowerCase() === fromVal.toLowerCase());
+  const toPlace   = PLACES.find(p => p.name.toLowerCase() === toVal.toLowerCase());
+  if (fromPlace && !confirmed.from) confirmed.from = { lat: fromPlace.lat, lng: fromPlace.lng, address: fromPlace.name };
+  if (toPlace   && !confirmed.to)   confirmed.to   = { lat: toPlace.lat,   lng: toPlace.lng,   address: toPlace.name };
+
+  if (!confirmed.from || !confirmed.to) {
+    alert('Please confirm both locations on the map before searching.');
+    return;
+  }
+
+  // Draw route on map
+  if (!map) {
+    document.getElementById('mapPlaceholder').classList.add('hide');
+    initMap(confirmed.from.lat, confirmed.from.lng, 10);
+    setTimeout(() => map && map.invalidateSize(), 100);
+  }
+  ['from','to'].forEach(f => {
+    if (!markers[f]) {
+      const c = confirmed[f];
+      markers[f] = L.marker([c.lat, c.lng], { icon: pinIcon(f) }).addTo(map);
+    }
+  });
+  setTimeout(() => drawRoute(), 200);
+
+  // ── Search DB ──
+  const goBtn = document.querySelector('.go-btn');
+  const lbl   = document.getElementById('btnLabel');
+  const origText = lbl.textContent;
+  lbl.textContent = 'Searching…';
+  goBtn.disabled  = true;
+
+  try {
+    const allRides = await sbFetch('/RIDE?ride_status=eq.available&select=*');
+    let matched = (allRides || []).filter(r => {
+      const srcMatch  = placesMatch(r.source, fromVal);
+      const destMatch = placesMatch(r.destination, toVal);
+      if (srcMatch && destMatch) { r._sourceMatch = true; r._destMatch = true; return true; }
+      // Include nearby: one end matches and the other is in same district
+      const fromDistrict = fromPlace ? fromPlace.district : null;
+      const toDistrict   = toPlace   ? toPlace.district   : null;
+      const nearSrc  = fromDistrict && r.source.toLowerCase().includes(fromDistrict.toLowerCase());
+      const nearDest = toDistrict   && r.destination.toLowerCase().includes(toDistrict.toLowerCase());
+      if ((srcMatch || nearSrc) && (destMatch || nearDest)) {
+        r._sourceMatch = srcMatch; r._destMatch = destMatch; return true;
+      }
+      return false;
+    });
+
+    // "Schedule for Later" — only rides starting 4+ hours from now
+    if (mode === 'later') {
+      matched = matched.filter(r => isAfter4Hours(r.ride_time));
+    }
+
+    // Sort by time
+    matched.sort((a, b) => (a.ride_time || '').localeCompare(b.ride_time || ''));
+
+    showRideResults(matched, fromVal, toVal);
+
+  } catch (err) {
+    console.error('Ride search error:', err);
+    showRideResults([], fromVal, toVal);
+  } finally {
+    lbl.textContent = origText;
+    goBtn.disabled  = false;
+  }
+}
