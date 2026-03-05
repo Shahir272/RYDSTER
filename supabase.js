@@ -16,8 +16,15 @@ async function sbFetch(path, options = {}) {
       ...(options.headers || {}),
     },
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || data.error || 'Supabase error');
+
+  // Handle empty responses (e.g. 201 No Content from POST with return=minimal)
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+
+  if (!res.ok) {
+    const msg = (data && (data.message || data.error)) || `Supabase error (${res.status})`;
+    throw new Error(msg);
+  }
   return data;
 }
 
@@ -91,6 +98,7 @@ function rydrRequireAuth(allowedRoles) {
   }
   return user;
 }
+
 // ── RIDE ──────────────────────────────────────────────────────────────────────
 
 /**
