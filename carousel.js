@@ -3,7 +3,7 @@ const REVIEWS = [
   { s:5, t:'"Saved 450 points on my commute today! The platform is so easy to use."',           n:'Sanjay Kumar',           r:'Daily Commuter',       photo:'https://randomuser.me/api/portraits/men/44.jpg'   },
   { s:5, t:'"Found a carpool buddy within minutes and saved so much on fuel this month!"',      n:'Akash Geo',              r:'Office Commuter',      photo:'https://randomuser.me/api/portraits/men/32.jpg'   },
   { s:5, t:'"The rewards system is genius. I earn enough points for free coffee every week!How good"',  n:'Shresta Brijesh',        r:'Frequent Rider',       photo:'https://randomuser.me/api/portraits/women/68.jpg' },
-  { s:5, t:'"I love how RYDR encourages sustainable commuting. A win for my wallet and the planet!"', n:'Silpa Suresh',    r:'Eco-conscious Commuter',photo:'https://randomuser.me/api/portraits/women/76.jpg'},
+  { s:5, t:'"I love how RYDR encourages sustainable commuting. A win for my wallet and the planet!Save earth"', n:'Silpa Suresh',    r:'Eco-conscious Commuter',photo:'https://randomuser.me/api/portraits/women/76.jpg'},
   { s:5, t:'"The app is super intuitive and the support team is fantastic. Highly recommend!"', n:'Shahir N',               r:'Tech Enthusiast',      photo:'https://randomuser.me/api/portraits/men/22.jpg'   },
   { s:5, t:'"RYDR completely changed how I commute. Saved so much money and met great people!"',n:'Jyotsanna Teressa George',r:'Urban Commuter',      photo:'https://randomuser.me/api/portraits/women/45.jpg' },
   { s:5, t:'"The gamification is so motivating! I choose greener options just to earn more points."', n:'Jackson Shelvi',  r:'Sustainable Commuter', photo:'https://randomuser.me/api/portraits/men/23.jpg'   },
